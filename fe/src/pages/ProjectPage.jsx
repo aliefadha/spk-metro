@@ -12,7 +12,7 @@ export default function ProjectPage() {
         <select className="px-4 py-2 border border-primer rounded-lg bg-transparent text-primer py-1">
             <option value="001"> Filter berdasarkan divisi </option>
           </select>
-        <input type="month" className="px-4 py-2 border border-primer rounded-lg bg-transparent text-primer"/>
+          <input type="month" className="px-4 py-2 border border-primer rounded-lg bg-transparent text-primer" />
         <button className="px-4 py-2 border border-primer rounded-lg bg-transparent text-primer ml-auto">
           Export
         </button>
