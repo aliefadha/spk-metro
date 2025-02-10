@@ -3,16 +3,15 @@ import { Edit, Trash2 } from 'lucide-react';
 
 const ProjectTable = ({ data }) => {
   const [showModal, setShowModal] = useState(false);
-
   const handleModal = () => setShowModal(!showModal);
 
   return (
     <div className="bg-white rounded-lg p-6 mt-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h2 className="text-xl font-semibold">Divisi Developer</h2>
+      <div className="flex flex-col sm:flex-row gap-2 mb-6 ">
+        <h2 className="text-xl font-semibold mr-3">Divisi Developer</h2>
         <button
           onClick={handleModal}
-          className="px-4 py-2 rounded-lg bg-primer text-white"
+          className="px-4 py-2 rounded-lg bg-primer text-white  ml-auto"
         >
           + Tambah Proyek
         </button>

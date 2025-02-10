@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Edit, Trash2 } from 'lucide-react';
 
-const DivisionTable = ({ data }) => {
+const MemberTable = ({ data }) => {
   const [showModal, setShowModal] = useState(false);
 
   const handleModal = () => setShowModal(!showModal);
@@ -14,7 +14,7 @@ const DivisionTable = ({ data }) => {
           onClick={handleModal}
           className="px-4 py-2 rounded-lg bg-primer text-white ml-auto"
         >
-          + Tambah Divisi
+          + Tambah Member
         </button>
       </div>
 
@@ -23,9 +23,9 @@ const DivisionTable = ({ data }) => {
         <table className="w-full">
           <thead>
             <tr className="bg-purple-50">
-              <th className="px-4 py-3 text-left text-primer">ID Division</th>
-              <th className="px-4 py-3 text-left text-primer">Nama Divisi</th>
-              <th className="px-4 py-3 text-left text-primer">Jumlah Anggota</th>
+              <th className="px-4 py-3 text-left text-primer">ID Member</th>
+              <th className="px-4 py-3 text-left text-primer">Nama Member</th>
+              <th className="px-4 py-3 text-left text-primer">Divisi</th>
               <th className="px-4 py-3 text-left text-primer">Aksi</th>
               
             </tr>
@@ -110,4 +110,4 @@ const DivisionTable = ({ data }) => {
   );
 };
 
-export default DivisionTable;
+export default MemberTable;

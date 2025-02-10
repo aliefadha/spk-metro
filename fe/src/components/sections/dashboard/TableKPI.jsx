@@ -1,20 +1,20 @@
 import { useState } from 'react';
 import { Edit, Trash2 } from 'lucide-react';
 
-const DivisionTable = ({ data }) => {
+const TableKPI = ({ data }) => {
   const [showModal, setShowModal] = useState(false);
-
   const handleModal = () => setShowModal(!showModal);
 
   return (
     
     <div className="bg-white rounded-lg p-6 mt-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+       <div className="flex flex-col sm:flex-row gap-2 mb-6 ">
+        <h2 className="text-xl font-semibold mr-3">Divisi Developer</h2>
         <button
           onClick={handleModal}
-          className="px-4 py-2 rounded-lg bg-primer text-white ml-auto"
+          className="px-4 py-2 rounded-lg bg-primer text-white  ml-auto"
         >
-          + Tambah Divisi
+          + Tambah KPI
         </button>
       </div>
 
@@ -23,9 +23,11 @@ const DivisionTable = ({ data }) => {
         <table className="w-full">
           <thead>
             <tr className="bg-purple-50">
-              <th className="px-4 py-3 text-left text-primer">ID Division</th>
-              <th className="px-4 py-3 text-left text-primer">Nama Divisi</th>
-              <th className="px-4 py-3 text-left text-primer">Jumlah Anggota</th>
+              <th className="px-4 py-3 text-left text-primer">Kode KPI</th>
+              <th className="px-4 py-3 text-left text-primer">Nama KPI </th>
+              <th className="px-4 py-3 text-left text-primer">Karakteristik</th>
+              <th className="px-4 py-3 text-left text-primer">Bobot</th>
+              <th className="px-4 py-3 text-left text-primer">Target</th>
               <th className="px-4 py-3 text-left text-primer">Aksi</th>
               
             </tr>
@@ -35,6 +37,8 @@ const DivisionTable = ({ data }) => {
               <tr key={row.id} className="border-b">
                 <td className="px-4 py-3">{row.id}</td>
                 <td className="px-4 py-3">{row.nama_divisi}</td>
+                <td className="px-4 py-3">{row.jumlah_anggota}</td>
+                <td className="px-4 py-3">{row.jumlah_anggota}</td>
                 <td className="px-4 py-3">{row.jumlah_anggota}</td>
                 <td className="px-4 py-3">
                   <div className="flex space-x-4">
@@ -110,4 +114,4 @@ const DivisionTable = ({ data }) => {
   );
 };
 
-export default DivisionTable;
+export default TableKPI;
