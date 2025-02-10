@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  id                  String                @id @default(uuid())
+  email               String                @unique
+  password            String
+  fullName            String
+  role                Role
+  projectCollaborator projectCollaborator[]
+  divisionId          String?
+  token               token[]
+  division            division?              @relation(fields: [divisionId], references: [id])
+  created_at          DateTime              @default(now())
+  updated_at          DateTime              @updatedAt
+}
+
+model token {
+  id         String   @id @default(uuid())
+  token      String   @db.Text
+  user       user?    @relation(fields: [userId], references: [id])
+  userId     String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model projectCollaborator {
+  projectId        String
+  userId           String
+  isProjectManager Boolean
+  user             user     @relation(fields: [userId], references: [id])
+  project          project  @relation(fields: [projectId], references: [id])
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@id([projectId, userId])
+}
+
+model project {
+  id                  String                @id @default(uuid())
+  projectName         String
+  bobot               Float
+  deadline            String
+  status              StatusProject
+  projectCollaborator projectCollaborator[]
+  asessment           assesment[]
+  created_at          DateTime              @default(now())
+  updated_at          DateTime              @updatedAt
+}
+
+model metric {
+  id         String      @id @default(uuid())
+  kodeKpi    String      @unique
+  kpiName    String
+  target     Float
+  bobot      Float
+  asessment  assesment[]
+  created_at DateTime    @default(now())
+  updated_at DateTime    @updatedAt
+}
+
+model assesment {
+  id                  String                @id @default(uuid())
+  projectId           String
+  metricId            String
+  userId              String
+  value               Int
+  assesmentDate       String
+  project             project               @relation(fields: [projectId], references: [id])
+  metric              metric                @relation(fields: [metricId], references: [id])
+  assesmentResult     assesmentResult[]
+  metricNormalization metricNormalization[]
+  metricResult        metricResult[]
+  created_at          DateTime              @default(now())
+  updated_at          DateTime              @updatedAt
+}
+
+model metricResult {
+  id               String     @id @default(uuid())
+  totalUtility     Float
+  vikorIndex       Float
+  maximumDeviation Float
+  assesment        assesment? @relation(fields: [assesmentId], references: [id])
+  assesmentId      String?
+  created_at       DateTime   @default(now())
+  updated_at       DateTime   @updatedAt
+}
+
+model metricNormalization {
+  id          String     @id @default(uuid())
+  value       Float
+  assesment   assesment? @relation(fields: [assesmentId], references: [id])
+  assesmentId String?
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+}
+
+model assesmentResult {
+  id          String          @id @default(uuid())
+  skor        Float
+  status      StatusAssesment
+  isPersonal  Boolean
+  assesment   assesment?      @relation(fields: [assesmentId], references: [id])
+  assesmentId String?
+  created_at  DateTime        @default(now())
+  updated_at  DateTime        @updatedAt
+}
+
+enum StatusAssesment {
+  ACHIEVED
+  NOTACHIEVED
+}
+
+enum StatusProject {
+  DONE
+  ONPROGRESS
+  BACKLOG
+}
+
+model division {
+  id           String @id @default(uuid())
+  divisionName String @unique
+  totalMember  Int?
+  user         user[]
+}
+
+enum Role {
+  SUPERADMIN
+  MEMBER
+  PM
+}
