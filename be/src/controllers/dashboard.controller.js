@@ -13,7 +13,6 @@ const dashboardController = {
             });
 
             const divisionCount = await prisma.division.count();
-
             const projectCount = await prisma.project.count();
 
             res.status(200).json({

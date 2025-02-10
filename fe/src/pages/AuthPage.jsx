@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Mail } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import logo from "../assets/logo.png";
 import bg from "../assets/bg.png";
 import api from '@/utils/axios';
@@ -8,18 +10,35 @@ const AuthPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.post("/v1/login", {
+            const response = await api.post("/v1/login", {
                 email,
                 password
             });
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil Masuk!',
+                text: 'Anda akan diarahkan ke dashboard.',
+                timer: 2000,
+                showConfirmButton: false,
+            });
+
+            navigate('/dashboard'); // Navigate to Dashboard after success
+
         } catch (error) {
-            console.log(error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Masuk',
+                text: error.response?.data?.message || 'Terjadi kesalahan, periksa kembali email dan password Anda.',
+            });
         }
     };
+
     return (
         <div className="min-h-screen flex">
             {/* Left side - Login Form */}

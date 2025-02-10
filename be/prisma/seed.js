@@ -1,5 +1,5 @@
-const seedSuperAdmin = require('./seeders/user.seed');
-const seedDivisions = require('./seeders/division.seed');
+const seedSuperAdmin = require('../prisma/seeders/user.seed');
+const seedDivisions = require('../prisma/seeders/division.seed');
 
 const mainSeeder = async () => {
     console.log('Starting database seeding...');
