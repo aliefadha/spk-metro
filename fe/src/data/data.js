@@ -64,3 +64,17 @@ export const kpiData = [
   { id: 3, name: 'Rozo', metrics: [60, 70, 80, 90, 90], score: 90, status: 'Achieved' },
   { id: 4, name: 'Raze', metrics: [60, 70, 80, 90, 90], score: 90, status: 'Achieved' }
 ];
+
+
+export const projectData = [
+  { id: 1, nama_proyek: 'E-Commerce Resong',        bobot:'1,2 (Medium)', deadline :'12/12/2025',  pm : 'Daffa',  anggota :'Daffa, Kemal', status: 'Done' },
+  { id: 2, nama_proyek: 'Sistem Informasi Apotek',  bobot:'1,2 (Medium)', deadline :'12/12/2025', pm : 'Syifa',   anggota :'Daffa, Kemal', status: 'On Progress' },
+  { id: 3, nama_proyek: 'Sistem Informasi Apotek',  bobot:'1,2 (Medium)', deadline :'12/12/2025', pm : 'Hagi',    anggota :'Daffa, Kemal', status: 'On Progress' },
+  { id: 4, nama_proyek: 'Sistem Informasi Apotek',  bobot:'1,2 (Medium)', deadline :'12/12/2025', pm : 'Eland',   anggota :'Daffa, Kemal', status: 'On Progress' }
+];
+
+export const divisionData = [
+  { id: 1, nama_divisi: 'Developer',  jumlah_anggota :'12' },
+  { id: 2, nama_divisi: 'Marketing',  jumlah_anggota :'15' },
+
+];
