@@ -50,6 +50,13 @@ const userController = {
             if (!isPasswordValid) return res.status(401).json({ error: true, message: 'Invalid email or password', data: null });
 
             const token = generateToken({ id: user.id, role: user.role });
+            await prisma.token.create({
+                data: {
+                    token: token,
+                    userId: user.id,
+                },
+            });
+            
 
             res.status(200).json({ error: false, message: 'Login successful', data: { token, user } });
         } catch (err) {
