@@ -11,7 +11,7 @@ export default function DivisionPage() {
         <Pentagon className="w-5 h-5 mr-2 text-primer "/>
         Division
       </h1>
-        <DivisionTable data={divisionData} />
+        <DivisionTable />
     </MainLayout>
   )
 }

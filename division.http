@@ -1,0 +1,32 @@
+### Get All Division
+GET http://localhost:3000/api/v1/division
+Content-Type: application/json
+
+### Create Division
+POST http://localhost:3000/api/v1/division
+Content-Type: application/json
+
+{
+    "divisionName" : "Divisi Baru"
+}
+
+
+### Get Division by Id
+GET http://localhost:3000/api/v1/division/9cab2ec1-892b-494b-beaf-d85a44441643
+Content-Type: application/json
+
+
+### Update Division
+PUT http://localhost:3000/api/v1/division/9cab2ec1-892b-494b-beaf-d85a44441643
+Content-Type: application/json
+
+{
+    "divisionName" : "Divisi kontel",
+    "totalMember" : 12
+
+}
+
+
+### Delete Division
+DELETE http://localhost:3000/api/v1/division/9cab2ec1-892b-494b-beaf-d85a44441643
+Content-Type: application/json

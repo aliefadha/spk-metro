@@ -126,7 +126,7 @@ enum StatusProject {
 model division {
   id           String @id @default(uuid())
   divisionName String @unique
-  totalMember  Int?
+  totalMember  Int @default(0) 
   user         user[]
 }
 

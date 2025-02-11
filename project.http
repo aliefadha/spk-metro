@@ -1,0 +1,57 @@
+
+### Get All Projects
+GET http://localhost:3000/api/v1/projects
+Content-Type: application/json
+
+
+### Get Project by ID
+GET http://localhost:3000/api/v1/project/{projectId}
+Content-Type: application/json
+
+###
+
+### Create New Project
+POST http://localhost:3000/api/v1/project
+Content-Type: application/json
+
+{
+  "projectName": "New Project",
+  "bobot": 0.75,
+  "deadline": "2025-12-31",
+  "status": "ONPROGRESS",
+  "projectCollaborator": [
+    {
+      "userId": "example-user-id-1",
+      "isProjectManager": false
+    },
+    {
+      "userId": "example-user-id-2",
+      "isProjectManager": true
+    }
+  ]
+}
+
+###
+
+### Update Project
+PATCH http://localhost:3000/api/v1/project/{projectId}
+Content-Type: application/json
+
+{
+  "projectName": "Updated Project Name",
+  "bobot": 0.85,
+  "deadline": "2026-06-15",
+  "status": "DONE",
+  "projectCollaborator": [
+    {
+      "userId": "updated-user-id-1",
+      "isProjectManager": false
+    }
+  ]
+}
+
+###
+
+### Delete Project
+DELETE http://localhost:3000/api/v1/project/{projectId}
+Content-Type: application/json

@@ -2,7 +2,6 @@ const express = require('express')
 const api = express.Router()
 const userController = require('../controllers/user.controller.js')
 const dashboardController = require('../controllers/dashboard.controller.js')
-const projectController = require('../controllers/project.controller.js');
 const { authenticate, authorize } = require('../middlewares/auth.middleware.js')
 
 api.use(authenticate)
@@ -18,11 +17,5 @@ api.patch("/api/v2/user", authorize('SUPERADMIN'), userController.deleteUserDivi
 api.get("/api/v1/count", authorize('SUPERADMIN'), dashboardController.countData)
 
 
-//project 
-api.get('/api/v1/projects',  projectController.getAllProjects);
-api.get('/api/v1/project/:id', projectController.getProjectById);
-api.post('/api/v1/project', projectController.createProject);
-api.patch('/api/v1/project/:id',  projectController.updateProject);
-api.delete('/api/v1/project/:id', projectController.deleteProject);
 
 module.exports = api
