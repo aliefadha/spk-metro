@@ -1,13 +1,35 @@
-import { useState } from 'react';
-import { Edit, Trash2 } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Edit, Trash2 } from "lucide-react";
+import api from "@/utils/axios";
+import Swal from "sweetalert2";
 
-const MemberTable = ({ data }) => {
+const MemberTable = () => {
   const [showModal, setShowModal] = useState(false);
-
   const handleModal = () => setShowModal(!showModal);
 
+  const [data, setData] = useState([]);
+
+  const fetchData = async () => {
+    try {
+      const response = await api.get("http://localhost:3000/api/v1/member");
+      setData(response.data.data);
+    } catch (error) {
+      console.error("Gagal memuat data:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Memuat Data",
+        text:
+          error.response?.data?.message ||
+          "Terjadi kesalahan saat memuat data.",
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   return (
-    
     <div className="bg-white rounded-lg p-6 mt-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <button
@@ -27,15 +49,14 @@ const MemberTable = ({ data }) => {
               <th className="px-4 py-3 text-left text-primer">Nama Member</th>
               <th className="px-4 py-3 text-left text-primer">Divisi</th>
               <th className="px-4 py-3 text-left text-primer">Aksi</th>
-              
             </tr>
           </thead>
           <tbody>
-            {data.map((row) => (
+            {data.map((row, index) => (
               <tr key={row.id} className="border-b">
-                <td className="px-4 py-3">{row.id}</td>
-                <td className="px-4 py-3">{row.nama_divisi}</td>
-                <td className="px-4 py-3">{row.jumlah_anggota}</td>
+                <td className="px-4 py-3">{index + 1}</td>
+                <td className="px-4 py-3">{row.fullName}</td>
+                <td className="px-4 py-3">{row.divisionId}</td>
                 <td className="px-4 py-3">
                   <div className="flex space-x-4">
                     <button className="p-1 hover:text-yellow-500">
@@ -56,38 +77,18 @@ const MemberTable = ({ data }) => {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg shadow-lg w-96">
-            <h2 className="text-xl font-semibold mb-4">Tambah Proyek</h2>
+            <h2 className="text-xl font-semibold mb-4">Tambah Member</h2>
             <form>
               <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">Nama Proyek*</label>
+                <label className="block mb-2 text-sm font-medium">
+                  Nama Member
+                </label>
                 <input type="text" className="w-full border p-2 rounded-md" />
               </div>
               <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">Bobot*</label>
+                <label className="block mb-2 text-sm font-medium">Divisi</label>
                 <select className="w-full border p-2 rounded-md">
-                  <option value="001"></option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">Deadline*</label>
-                <input type="date" className="w-full border p-2 rounded-md"/>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">PM*</label>
-                <select className="w-full border p-2 rounded-md">
-                  <option value="001"></option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">Anggota*</label>
-                <select className="w-full border p-2 rounded-md">
-                  <option value="001"></option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">Status*</label>
-                <select className="w-full border p-2 rounded-md">
-                  <option value="001"></option>
+                  <option value="000"> Pilih Divisi </option>
                 </select>
               </div>
               <div className="flex justify-end space-x-4">

@@ -1,0 +1,16 @@
+POST http://localhost:3000/api/v1/member
+Content-Type: application/json
+
+{
+    "fullName" : "Hagi Siraj Sumanta",
+    "divisionId" : "acdf92ff-a5e0-4cc5-8ba6-9f25d762ee2c"
+}
+
+### Get All Member
+GET http://localhost:3000/api/v1/member
+Content-Type: application/json
+
+
+### Delete Member
+DELETE http://localhost:3000/api/v1/member/98e18e7c-bfce-4b40-aa13-c6588b038ef0
+Content-Type: application/json
