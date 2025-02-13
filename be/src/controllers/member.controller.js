@@ -44,13 +44,29 @@ const memberController = {
     try {
       const members = await prisma.user.findMany({
         where: { role: "MEMBER" },
-        include: { division: true },
+        include: {
+          division: {
+            select: { divisionName: true },
+          },
+        },
       });
+
+      // Format respons biar lebih rapi
+      const result = members.map((member) => ({
+        id: member.id,
+        fullName: member.fullName,
+        email: member.email,
+        division: member.division
+          ? member.division.divisionName
+          : "Tidak ada divisi",
+        created_at: member.created_at,
+        updated_at: member.updated_at,
+      }));
 
       res.status(200).json({
         error: false,
         message: "Members retrieved successfully",
-        data: members,
+        data: result,
       });
     } catch (error) {
       res.status(500).json({

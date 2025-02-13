@@ -2,7 +2,7 @@ POST http://localhost:3000/api/v1/member
 Content-Type: application/json
 
 {
-    "fullName" : "Hagi Siraj Sumanta",
+    "fullName" : "Daffa Riza Muliya",
     "divisionId" : "acdf92ff-a5e0-4cc5-8ba6-9f25d762ee2c"
 }
 
