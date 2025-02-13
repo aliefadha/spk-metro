@@ -1,0 +1,38 @@
+POST http://localhost:3000/api/v1/metrics
+Content-Type: application/json
+
+{
+    "kodeKpi": "KPI001",
+    "kpiName": "KPI Name Example",
+    "target": 80,
+    "bobot": 50,
+    "char": "Benefit",
+    "divisionId": "bc2c2aeb-74d4-4238-a420-b01fe5e270a5"
+}
+
+
+### Get All Data 
+GET http://localhost:3000/api/v1/metrics
+Content-Type: application/json
+
+### Filter berdasarkan Divisi
+GET http://localhost:3000/api/v1/metrics/division?divisionId=bc2c2aeb-74d4-4238-a420-b01fe5e270a5
+Content-Type: application/json
+
+
+### Update Data (Masih Error)
+PUT http://localhost:3000/api/v1/metrics/fb1de9b8-2bc2-435f-b50f-fb3ee7131b95"
+Content-Type: application/json
+
+{
+    "kodeKpi": "KPI003_UPDATED",
+    "kpiName": "Updated KPI Name",
+    "target": 85,
+    "bobot": 55,
+    "char": "Benefit",
+    "divisionId": "bc2c2aeb-74d4-4238-a420-b01fe5e270a5"
+}
+
+### Delete Data 
+DELETE http://localhost:3000/api/v1/metrics/71c50ec3-f053-42b3-8dc8-c80a0981f6e7
+Content-Type: application/json

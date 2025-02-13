@@ -60,6 +60,8 @@ model metric {
   kpiName    String
   target     Float
   bobot      Float
+  char       Karakteristik
+  divisionId String       
   asessment  assesment[]
   created_at DateTime    @default(now())
   updated_at DateTime    @updatedAt
@@ -134,4 +136,9 @@ enum Role {
   SUPERADMIN
   MEMBER
   PM
+}
+
+enum Karakteristik {
+  Cost 
+  Benefit
 }

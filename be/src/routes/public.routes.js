@@ -4,6 +4,7 @@ const userController = require("../controllers/user.controller.js");
 const divisionController = require("../controllers/division.controller.js");
 const projectController = require("../controllers/project.controller.js");
 const memberController = require("../controllers/member.controller.js");
+const kpiController = require ("../controllers/kpi.controller.js")
 
 publicRoute.post("/api/v1/login", userController.login);
 
@@ -25,5 +26,13 @@ publicRoute.delete("/api/v1/project/:id", projectController.deleteProject);
 publicRoute.post("/api/v1/member", memberController.createMember);
 publicRoute.get("/api/v1/member", memberController.getAllMembers);
 publicRoute.delete("/api/v1/member/:id", memberController.deleteMember);
+
+//metric/kpi
+publicRoute.post("/api/v1/metrics", kpiController.createKpi);
+publicRoute.get("/api/v1/metrics", kpiController.getAllKpis);
+publicRoute.get("/api/v1/metrics/division", kpiController.getKpisByDivision);
+publicRoute.put("/api/v1/metrics/:id", kpiController.editKpi);
+publicRoute.delete("/api/v1/metrics/:id", kpiController.deleteKpi);
+
 
 module.exports = publicRoute;
