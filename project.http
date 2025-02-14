@@ -8,14 +8,13 @@ Content-Type: application/json
 GET http://localhost:3000/api/v1/project/5ac2b8f4-828a-4488-ad20-f900ed10ab79
 Content-Type: application/json
 
-###
 
 ### Create New Project
 POST http://localhost:3000/api/v1/project
 Content-Type: application/json
 
 {
-  "projectName": "New Project",
+  "projectName": "Sistem Informasi Hotel",
   "bobot": 0.75,
   "deadline": "2025-12-31",
   "status": "ONPROGRESS",
@@ -53,5 +52,5 @@ Content-Type: application/json
 ###
 
 ### Delete Project 
-DELETE http://localhost:3000/api/v1/project/5ac2b8f4-828a-4488-ad20-f900ed10ab79
+DELETE http://localhost:3000/api/v1/project/5e0e63fb-0df8-4888-9abc-87242c2e9023
 Content-Type: application/json
