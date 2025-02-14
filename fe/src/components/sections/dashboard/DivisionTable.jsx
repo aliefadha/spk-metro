@@ -73,7 +73,7 @@ const DivisionTable = () => {
 
     if (confirm.isConfirmed) {
       try {
-        await api.delete(`http://localhost:3000/api/v1/division/${id}`);
+        await api.delete(`http://localhost:3000/api/v1/project/${id}`);
         Swal.fire({
           icon: "success",
           title: "Berhasil!",

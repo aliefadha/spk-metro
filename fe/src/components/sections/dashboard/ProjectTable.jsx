@@ -119,6 +119,39 @@ const ProjectTable = () => {
     }
   };
 
+  const handleDelete = async (id) => {
+    const confirm = await Swal.fire({
+      title: "Yakin ingin menghapus divisi ini?",
+      text: "Data yang dihapus tidak bisa dikembalikan!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Ya, Hapus",
+      cancelButtonText: "Batal",
+    });
+
+    if (confirm.isConfirmed) {
+      try {
+        await api.delete(`http://localhost:3000/api/v1/division/${id}`);
+        Swal.fire({
+          icon: "success",
+          title: "Berhasil!",
+          text: "Divisi berhasil dihapus.",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+        await fetchData();
+      } catch (error) {
+        Swal.fire({
+          icon: "error",
+          title: "Gagal Menghapus",
+          text:
+            error.response?.data?.message ||
+            "Terjadi kesalahan saat menghapus divisi.",
+        });
+      }
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg p-6 mt-8">
       <div className="flex flex-col sm:flex-row gap-2 mb-6 ">
@@ -161,7 +194,10 @@ const ProjectTable = () => {
                     <button className="p-1 hover:text-yellow-500">
                       <Edit className="w-5 h-5 text-yellow-400" />
                     </button>
-                    <button className="p-1 hover:text-red-600">
+                    <button
+                      className="p-1 hover:text-red-600"
+                      onClick={() => handleDelete(row.id)}
+                    >
                       <Trash2 className="w-5 h-5 text-red-500" />
                     </button>
                   </div>
