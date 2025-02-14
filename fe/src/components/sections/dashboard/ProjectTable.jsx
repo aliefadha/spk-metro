@@ -92,7 +92,6 @@ const ProjectTable = () => {
 
     const pmId = formData.projectManager;
 
-    // Gabungkan PM ke dalam daftar anggota (pastikan tidak ada duplikat)
     const allCollaborators = [...new Set([...selectedAnggota, pmId])];
 
     const projectCollaborator = allCollaborators.map((id) => ({
@@ -121,7 +120,7 @@ const ProjectTable = () => {
 
   const handleDelete = async (id) => {
     const confirm = await Swal.fire({
-      title: "Yakin ingin menghapus divisi ini?",
+      title: "Yakin ingin menghapus project ini?",
       text: "Data yang dihapus tidak bisa dikembalikan!",
       icon: "warning",
       showCancelButton: true,
@@ -131,11 +130,11 @@ const ProjectTable = () => {
 
     if (confirm.isConfirmed) {
       try {
-        await api.delete(`http://localhost:3000/api/v1/division/${id}`);
+        await api.delete(`http://localhost:3000/api/v1/project/${id}`);
         Swal.fire({
           icon: "success",
           title: "Berhasil!",
-          text: "Divisi berhasil dihapus.",
+          text: "Project berhasil dihapus.",
           timer: 2000,
           showConfirmButton: false,
         });
@@ -146,7 +145,7 @@ const ProjectTable = () => {
           title: "Gagal Menghapus",
           text:
             error.response?.data?.message ||
-            "Terjadi kesalahan saat menghapus divisi.",
+            "Terjadi kesalahan saat menghapus project.",
         });
       }
     }
