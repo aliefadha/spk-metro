@@ -5,7 +5,7 @@ Content-Type: application/json
 
 
 ### Get Project by ID
-GET http://localhost:3000/api/v1/project/{projectId}
+GET http://localhost:3000/api/v1/project/5ac2b8f4-828a-4488-ad20-f900ed10ab79
 Content-Type: application/json
 
 ###
@@ -21,11 +21,11 @@ Content-Type: application/json
   "status": "ONPROGRESS",
   "projectCollaborator": [
     {
-      "userId": "example-user-id-1",
+      "userId": "f48b22e5-7879-499f-bc41-192146f5839d",
       "isProjectManager": false
     },
     {
-      "userId": "example-user-id-2",
+      "userId": "05130cd0-b8d7-47ff-bd67-42586148c343",
       "isProjectManager": true
     }
   ]
@@ -34,7 +34,7 @@ Content-Type: application/json
 ###
 
 ### Update Project
-PATCH http://localhost:3000/api/v1/project/{projectId}
+PATCH http://localhost:3000/api/v1/project/5ac2b8f4-828a-4488-ad20-f900ed10ab79
 Content-Type: application/json
 
 {
@@ -44,7 +44,7 @@ Content-Type: application/json
   "status": "DONE",
   "projectCollaborator": [
     {
-      "userId": "updated-user-id-1",
+      "userId": "f48b22e5-7879-499f-bc41-192146f5839d",
       "isProjectManager": false
     }
   ]
@@ -52,6 +52,6 @@ Content-Type: application/json
 
 ###
 
-### Delete Project
-DELETE http://localhost:3000/api/v1/project/{projectId}
+### Delete Project 
+DELETE http://localhost:3000/api/v1/project/5ac2b8f4-828a-4488-ad20-f900ed10ab79
 Content-Type: application/json

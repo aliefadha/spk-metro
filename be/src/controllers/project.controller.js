@@ -128,10 +128,29 @@ const projectController = {
     deleteProject: async (req, res) => {
         try {
             const { id } = req.params;
+    
+            // Cek apakah project dengan ID tersebut ada
+            const project = await prisma.project.findUnique({
+                where: { id },
+            });
+    
+            if (!project) {
+                return res.status(404).json({
+                    error: true,
+                    message: 'Project not found',
+                });
+            }
+    
+            // Menghapus data yang terkait terlebih dahulu jika perlu (misalnya projectCollaborator)
+            await prisma.projectCollaborator.deleteMany({
+                where: { projectId: id },
+            });
+    
+            // Menghapus project
             await prisma.project.delete({
                 where: { id },
             });
-
+    
             res.status(200).json({
                 error: false,
                 message: 'Project deleted successfully',
@@ -144,6 +163,7 @@ const projectController = {
             });
         }
     },
+    
 };
 
 module.exports = projectController;
