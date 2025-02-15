@@ -1,0 +1,32 @@
+### Create Assessment
+POST http://localhost:3000/api/v1/assessments
+Content-Type: application/json
+
+{
+  "userId": "05130cd0-b8d7-47ff-bd67-42586148c343",
+  "value": [10, 20, 30, 40],
+  "projectId": "73d8f15c-f419-4a86-9347-61897b51d267",
+   "metricId": "a6b04670-8373-4fc3-ad34-4cc7680fe257",  
+  "assessmentDate": "2025-02-15"
+}
+
+### Get All Assessments
+GET http://localhost:3000/api/v1/assessments
+Content-Type: application/json
+
+### Get Assessments by User
+GET http://localhost:3000/api/v1/assessments/user?userId=05130cd0-b8d7-47ff-bd67-42586148c343
+Content-Type: application/json
+
+### Update Assessment
+PUT http://localhost:3000/api/v1/assessments/be925de8-fd48-4f1c-9a0e-901c4457f739
+Content-Type: application/json
+
+{
+  "value": [15, 25, 35, 45, 55],
+  "assessmentDate": "2025-02-16"
+}
+
+### Delete Assessment
+DELETE http://localhost:3000/api/v1/assessments/be925de8-fd48-4f1c-9a0e-901c4457f739
+Content-Type: application/json

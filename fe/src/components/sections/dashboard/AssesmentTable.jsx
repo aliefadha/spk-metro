@@ -1,43 +1,104 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Edit, Trash2 } from "lucide-react";
+import api from "@/utils/axios";
 
 const AssesmentTable = () => {
-  const [showModal, setShowModal] = useState(false);
+  const [assessments, setAssessments] = useState([]);
+  const [data, setData] = useState([]);
+  const [kpiList, setKpiList] = useState([]);
 
-  const handleModal = () => setShowModal(!showModal);
+  const fetchData = async () => {
+    try {
+      const response = await api.get("http://localhost:3000/api/v1/division");
+      setData(response.data.data);
+    } catch (error) {
+      console.error("Gagal memuat data:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Memuat Data",
+        text:
+          error.response?.data?.message ||
+          "Terjadi kesalahan saat memuat data.",
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const fetchKPI = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/api/v1/metrics");
+        const result = await response.json();
+        setKpiList(result.data); // Simpan KPI ke state
+      } catch (error) {
+        console.error("Gagal memuat data:", error);
+      }
+    };
+
+    fetchKPI();
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:3000/api/v1/assessments"
+        );
+        const result = await response.json();
+
+        if (!response.ok)
+          throw new Error(result.message || "Failed to fetch data");
+
+        setAssessments(result.data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <div className="bg-white rounded-lg p-6 mt-8">
       <div className="flex flex-col sm:flex-row gap-2 mb-6 ">
-        <h2 className="text-xl font-semibold mr-3">Divisi Developer</h2>
-        <select className="px-4 py-2 rounded-lg bg-primer text-white min-w-[200px] ">
-          <option value="002">002 - E-Commerce Resong</option>
+        <h2 className="text-xl font-semibold mb-6">Data Assessment</h2>
+        <select className="px-4 py-2 border border-primer rounded-lg bg-transparent text-primer py-1 ml-auto">
+          <option value="000"> Filter berdasarkan divisi </option>
+          {data.map((row) => (
+            <option key={row.id} value={row.id}>
+              {row.divisionName}
+            </option>
+          ))}
         </select>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="bg-purple-50">
               <th className="px-4 py-3 text-left text-primer">Nama Member</th>
-              <th className="px-4 py-3 text-left text-primer">Metrik 1 </th>
-              <th className="px-4 py-3 text-left text-primer">Metrik 2</th>
-              <th className="px-4 py-3 text-left text-primer">Metrik 3</th>
-              <th className="px-4 py-3 text-left text-primer">Metrik 4</th>
-              <th className="px-4 py-3 text-left text-primer">Metrik 5</th>
+              {kpiList.map((kpi, index) => (
+                <th key={index} className="px-4 py-3 text-left text-primer">
+                  {kpi.kpiName}
+                </th>
+              ))}
               <th className="px-4 py-3 text-left text-primer">Aksi</th>
             </tr>
           </thead>
           <tbody>
-            {/* {data.map((row) => (
-              <tr key={row.id} className="border-b">
-                <td className="px-4 py-3">{row.id}</td>
-                <td className="px-4 py-3">{row.nama_divisi}</td>
-                <td className="px-4 py-3">{row.jumlah_anggota}</td>
-                <td className="px-4 py-3">{row.jumlah_anggota}</td>
-                <td className="px-4 py-3">{row.jumlah_anggota}</td>
-                <td className="px-4 py-3">{row.jumlah_anggota}</td>
+            {assessments.map((item, index) => (
+              <tr key={index} className="border-b">
+                <td className="px-4 py-3">{item.fullName}</td>
+                {item.metrics.map((metric, i) => (
+                  <td className="px-4 py-3 text-left" key={i}>
+                    {metric !== null ? metric : "-"}
+                  </td>
+                ))}
                 <td className="px-4 py-3">
                   <div className="flex space-x-4">
                     <button className="p-1 hover:text-yellow-500">
@@ -46,73 +107,10 @@ const AssesmentTable = () => {
                   </div>
                 </td>
               </tr>
-            ))} */}
+            ))}
           </tbody>
         </table>
       </div>
-
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-lg shadow-lg w-96">
-            <h2 className="text-xl font-semibold mb-4">Tambah Proyek</h2>
-            <form>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">
-                  Nama Proyek*
-                </label>
-                <input type="text" className="w-full border p-2 rounded-md" />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">Bobot*</label>
-                <select className="w-full border p-2 rounded-md">
-                  <option value="001"></option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">
-                  Deadline*
-                </label>
-                <input type="date" className="w-full border p-2 rounded-md" />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">PM*</label>
-                <select className="w-full border p-2 rounded-md">
-                  <option value="001"></option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">
-                  Anggota*
-                </label>
-                <select className="w-full border p-2 rounded-md">
-                  <option value="001"></option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">
-                  Status*
-                </label>
-                <select className="w-full border p-2 rounded-md">
-                  <option value="001"></option>
-                </select>
-              </div>
-              <div className="flex justify-end space-x-4">
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-lg bg-gray-300"
-                  onClick={handleModal}
-                >
-                  Batal
-                </button>
-                <button className="px-4 py-2 rounded-lg bg-primer text-white">
-                  Simpan
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

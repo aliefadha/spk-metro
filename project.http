@@ -14,18 +14,18 @@ POST http://localhost:3000/api/v1/project
 Content-Type: application/json
 
 {
-  "projectName": "Sistem Informasi Hotel",
-  "bobot": 0.75,
+  "projectName": "Project X",
+  "bobot": 0.5,
   "deadline": "2025-12-31",
   "status": "ONPROGRESS",
   "projectCollaborator": [
     {
-      "userId": "f48b22e5-7879-499f-bc41-192146f5839d",
-      "isProjectManager": false
-    },
-    {
       "userId": "05130cd0-b8d7-47ff-bd67-42586148c343",
       "isProjectManager": true
+    },
+    {
+      "userId": "16734319-7d27-4a51-a32d-13b75d19f1d6",
+      "isProjectManager": false
     }
   ]
 }

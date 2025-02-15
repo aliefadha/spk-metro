@@ -8,7 +8,11 @@ const projectController = {
         try {
             const projects = await prisma.project.findMany({
                 include: {
-                    projectCollaborator: true,
+                    projectCollaborator: {
+                        include : {
+                            user : true,
+                        }
+                    },
                     asessment: true,
                 },
             });
@@ -61,9 +65,41 @@ const projectController = {
     },
 
     // Create a new project
+   
+     
+    // createProject: async (req, res) => {
+    //     try {
+    //         const { projectName, bobot, deadline, status, projectCollaborator } = req.body;
+    //         const newProject = await prisma.project.create({
+    //             data: {
+    //                 projectName,
+    //                 bobot,
+    //                 deadline,
+    //                 status,
+    //                 projectCollaborator: {
+    //                     create: projectCollaborator,
+    //                 },
+    //             },
+    //         });
+
+    //         res.status(201).json({
+    //             error: false,
+    //             message: 'Project created successfully',
+    //             data: newProject,
+    //         });
+    //     } catch (err) {
+    //         res.status(500).json({
+    //             error: true,
+    //             message: 'Error creating project',
+    //             errorDetail: err.message,
+    //         });
+    //     }
+    // },
+
     createProject: async (req, res) => {
         try {
             const { projectName, bobot, deadline, status, projectCollaborator } = req.body;
+    
             const newProject = await prisma.project.create({
                 data: {
                     projectName,
@@ -74,22 +110,57 @@ const projectController = {
                         create: projectCollaborator,
                     },
                 },
+                include: {
+                    projectCollaborator: true, 
+                },
             });
-
+    
+            const metrics = await prisma.metric.findMany();
+            if (metrics.length === 0) {
+                return res.status(400).json({
+                    error: true,
+                    message: "Tidak ada metric yang tersedia!",
+                });
+            }
+    
+            const assessmentsData = [];
+            newProject.projectCollaborator.forEach((collaborator) => {
+                metrics.forEach((metric) => {
+                    assessmentsData.push({
+                        projectId: newProject.id,
+                        metricId: metric.id,
+                        userId: collaborator.userId,
+                        value: 0, 
+                        assesmentDate: new Date().toISOString().split("T")[0], 
+                    });
+                });
+            });
+    
+            if (assessmentsData.length > 0) {
+                await prisma.assesment.createMany({
+                    data: assessmentsData,
+                    skipDuplicates: true, 
+                });
+            }
+    
             res.status(201).json({
                 error: false,
-                message: 'Project created successfully',
+                message: "Project dan assessment berhasil dibuat",
                 data: newProject,
             });
+    
         } catch (err) {
+            console.error("Error creating project:", err);
             res.status(500).json({
                 error: true,
-                message: 'Error creating project',
+                message: "Error creating project",
                 errorDetail: err.message,
             });
         }
     },
+    
 
+    
     // Update a project
     updateProject: async (req, res) => {
         try {

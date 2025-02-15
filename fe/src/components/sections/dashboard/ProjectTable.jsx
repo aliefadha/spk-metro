@@ -25,12 +25,12 @@ const ProjectTable = () => {
 
       const transformedData = response.data.data.map((project) => {
         const pm =
-          project.projectCollaborator.find((col) => col.isProjectManager)
-            ?.userId || "N/A";
+          project.projectCollaborator.find((col) => col.isProjectManager)?.user
+            .fullName || "N/A";
         const anggota =
           project.projectCollaborator
             .filter((col) => !col.isProjectManager)
-            .map((col) => col.userId)
+            .map((col) => col.user.fullName)
             .join(", ") || "N/A";
 
         return {
@@ -229,10 +229,12 @@ const ProjectTable = () => {
                 <label className="w-1/3 text-sm font-medium">Bobot*</label>
                 <input
                   type="number"
+                  step="0.1"
+                  min="0"
+                  max="10"
                   name="bobot"
                   className="w-full border p-2 rounded-md"
                   onChange={handleChange}
-                  required
                 />
               </div>
               <div className="mb-4 flex items-center">

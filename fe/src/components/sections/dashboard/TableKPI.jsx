@@ -13,7 +13,7 @@ const TableKPI = () => {
   const [target, settarget] = useState("");
   const [bobot, setBobot] = useState("");
   const [char, setChar] = useState("");
-  const [divisionId] = useState("bc2c2aeb-74d4-4238-a420-b01fe5e270a5");
+  const [divisionId] = useState("e0b4374f-3403-4e5d-97af-398e0cec468d");
 
   const fetchData = async () => {
     try {
@@ -138,7 +138,7 @@ const TableKPI = () => {
                 <td className="px-4 py-3">{row.kpiName}</td>
                 <td className="px-4 py-3">{row.char}</td>
                 <td className="px-4 py-3">{row.bobot}</td>
-                <td className="px-4 py-3">{row.target}</td>
+                <td className="px-4 py-3">{row.target}%</td>
                 <td className="px-4 py-3">
                   <div className="flex space-x-4">
                     <button className="p-1 hover:text-yellow-500">
