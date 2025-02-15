@@ -200,24 +200,6 @@ const assessmentController = {
   },
 };
 
-handleSave:  async (req, res) => {
-  try {
-    await fetch(`http://localhost:3000/api/v1/assessments/${editedValues.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ metrics: editedValues.metrics }),
-    });
-
-    // Perbarui state
-    const updatedAssessments = [...assessments];
-    updatedAssessments[editingIndex] = editedValues;
-    setAssessments(updatedAssessments);
-
-    setEditingIndex(null);
-  } catch (error) {
-    console.error("Gagal menyimpan perubahan:", error);
-  }
-};
 
 
 module.exports = assessmentController;
