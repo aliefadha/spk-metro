@@ -89,42 +89,40 @@ const assessmentController = {
     }
   },
 
-  // Update an assessment
   updateAssessment: async (req, res) => {
-    const { id } = req.params;
-    const { value, assessmentDate } = req.body;
-
-    if (!Array.isArray(value) || value.length !== 5 || !assessmentDate) {
-      return res.status(400).json({
-        error: true,
-        message: "value harus berupa array dengan 5 angka dan assessmentDate harus diisi.",
-      });
-    }
-
     try {
-      // Update values for an existing assessment
-      const updatedAssessments = await Promise.all(
-        value.map(async (val) => {
-          return prisma.assesment.update({
-            where: { id },
-            data: { value: val, assesmentDate: assessmentDate },
-          });
-        })
-      );
+        const { id } = req.params;
+        const { value } = req.body;
 
-      res.status(200).json({
-        error: false,
-        message: "Assessment berhasil diperbarui",
-        data: updatedAssessments,
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: true,
-        message: "Gagal mengupdate assessment",
-        errorDetail: error.message,
-      });
+        // Validasi input
+        if (!value || !Array.isArray(value)) {
+            return res.status(400).json({
+                error: true,
+                message: "Value harus berupa array angka",
+            });
+        }
+
+        // Update assessment di database
+        const updatedAssessment = await prisma.assesment.update({
+            where: { id },
+            data: { value },
+        });
+
+        res.status(200).json({
+            error: false,
+            message: "Assessment berhasil diperbarui",
+            data: updatedAssessment,
+        });
+    } catch (err) {
+        res.status(500).json({
+            error: true,
+            message: "Gagal memperbarui assessment",
+            errorDetail: err.message,
+        });
     }
-  },
+},
+
+
 
   getAssessmentTable: async (req, res) => {
     try {

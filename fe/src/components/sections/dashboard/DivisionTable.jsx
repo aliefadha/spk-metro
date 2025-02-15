@@ -120,7 +120,7 @@ const DivisionTable = () => {
           <tbody>
             {data.map((row, index) => (
               <tr key={row.id} className="border-b">
-                <td className="px-4 py-3">{index + 1}</td>
+                <td className="px-4 py-3">#00{index + 1}</td>
                 <td className="px-4 py-3">{row.divisionName}</td>
                 <td className="px-4 py-3">{row.totalMember}</td>
                 <td className="px-4 py-3">

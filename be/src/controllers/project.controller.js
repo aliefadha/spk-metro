@@ -65,40 +65,11 @@ const projectController = {
     },
 
     // Create a new project
-   
-     
-    // createProject: async (req, res) => {
-    //     try {
-    //         const { projectName, bobot, deadline, status, projectCollaborator } = req.body;
-    //         const newProject = await prisma.project.create({
-    //             data: {
-    //                 projectName,
-    //                 bobot,
-    //                 deadline,
-    //                 status,
-    //                 projectCollaborator: {
-    //                     create: projectCollaborator,
-    //                 },
-    //             },
-    //         });
-
-    //         res.status(201).json({
-    //             error: false,
-    //             message: 'Project created successfully',
-    //             data: newProject,
-    //         });
-    //     } catch (err) {
-    //         res.status(500).json({
-    //             error: true,
-    //             message: 'Error creating project',
-    //             errorDetail: err.message,
-    //         });
-    //     }
-    // },
-
     createProject: async (req, res) => {
         try {
             const { projectName, bobot, deadline, status, projectCollaborator } = req.body;
+    
+            console.log("Data projectCollaborator dari request:", projectCollaborator);
     
             const newProject = await prisma.project.create({
                 data: {
@@ -111,9 +82,16 @@ const projectController = {
                     },
                 },
                 include: {
-                    projectCollaborator: true, 
+                    projectCollaborator: {
+                        select: {
+                            userId: true,
+                            isProjectManager: true, 
+                        },
+                    },
                 },
             });
+    
+            console.log("Data projectCollaborator setelah create:", JSON.stringify(newProject.projectCollaborator, null, 2));
     
             const metrics = await prisma.metric.findMany();
             if (metrics.length === 0) {
@@ -123,18 +101,28 @@ const projectController = {
                 });
             }
     
-            const assessmentsData = [];
-            newProject.projectCollaborator.forEach((collaborator) => {
-                metrics.forEach((metric) => {
-                    assessmentsData.push({
-                        projectId: newProject.id,
-                        metricId: metric.id,
-                        userId: collaborator.userId,
-                        value: 0, 
-                        assesmentDate: new Date().toISOString().split("T")[0], 
-                    });
-                });
-            });
+            const filteredCollaborators = newProject.projectCollaborator.reduce((acc, collab) => {
+                if (!collab.isProjectManager) {
+                    acc.push(collab);
+                }
+                return acc;
+            }, []);
+            
+            console.log("Filtered Collaborators (Hanya isProjectManager: false):", JSON.stringify(filteredCollaborators, null, 2));
+            
+    
+            const assessmentsData = filteredCollaborators.map(collaborator => {
+                return metrics.map(metric => ({
+                    projectId: newProject.id,
+                    metricId: metric.id,
+                    userId: collaborator.userId,
+                    value: 0, 
+                    assesmentDate: new Date().toISOString().split("T")[0], 
+                }));
+            }).flat();  
+            
+    
+            console.log("Data assessmentsData sebelum insert:", JSON.stringify(assessmentsData, null, 2));
     
             if (assessmentsData.length > 0) {
                 await prisma.assesment.createMany({
@@ -159,7 +147,6 @@ const projectController = {
         }
     },
     
-
     
     // Update a project
     updateProject: async (req, res) => {
@@ -200,7 +187,6 @@ const projectController = {
         try {
             const { id } = req.params;
     
-            // Cek apakah project dengan ID tersebut ada
             const project = await prisma.project.findUnique({
                 where: { id },
             });
@@ -212,12 +198,10 @@ const projectController = {
                 });
             }
     
-            // Menghapus data yang terkait terlebih dahulu jika perlu (misalnya projectCollaborator)
             await prisma.projectCollaborator.deleteMany({
                 where: { projectId: id },
             });
     
-            // Menghapus project
             await prisma.project.delete({
                 where: { id },
             });

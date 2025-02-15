@@ -190,12 +190,16 @@ const TableKPI = () => {
                 <label className="block mb-2 text-sm font-medium">
                   Karakteristik*
                 </label>
-                <input
-                  type="text"
+                <select
+                  className="w-full border p-2 rounded-md"
                   value={char}
                   onChange={(e) => setChar(e.target.value)}
-                  className="w-full border p-2 rounded-md"
-                />
+                  required
+                >
+                  <option value="">Pilih Karakteristik</option>
+                  <option value="Benefit">Benefit</option>
+                  <option value="Cost">Cost</option>
+                </select>
               </div>
               <div className="mb-4">
                 <label className="block mb-2 text-sm font-medium">Bobot*</label>

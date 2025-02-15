@@ -19,12 +19,11 @@ GET http://localhost:3000/api/v1/assessments/user?userId=05130cd0-b8d7-47ff-bd67
 Content-Type: application/json
 
 ### Update Assessment
-PUT http://localhost:3000/api/v1/assessments/be925de8-fd48-4f1c-9a0e-901c4457f739
+PUT http://localhost:3000/api/v1/assessments/1bbe5705-12bf-47df-9a04-ac984293d637
 Content-Type: application/json
 
 {
-  "value": [15, 25, 35, 45, 55],
-  "assessmentDate": "2025-02-16"
+  "value": [5, 8, 7, 6, 9]
 }
 
 ### Delete Assessment

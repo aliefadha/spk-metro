@@ -6,8 +6,12 @@ const projectController = require("../controllers/project.controller.js");
 const memberController = require("../controllers/member.controller.js");
 const kpiController = require ("../controllers/kpi.controller.js")
 const assessmentController = require ("../controllers/assesment.controller.js")
+const dashboardController = require ("../controllers/dashboard.controller.js")
 
 publicRoute.post("/api/v1/login", userController.login);
+
+//Dashboard 
+publicRoute.get("/api/v1/count", dashboardController.countData)
 
 // Routes Division
 publicRoute.post("/api/v1/division", divisionController.createDivision);

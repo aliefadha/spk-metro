@@ -1,0 +1,3 @@
+### Get All Dashboard
+GET http://localhost:3000/api/v1/count
+Content-Type: application/json

@@ -131,7 +131,7 @@ const MemberTable = () => {
         <table className="w-full">
           <thead>
             <tr className="bg-purple-50">
-              <th className="px-4 py-3 text-left text-primer">ID Member</th>
+              <th className="px-4 py-3 text-left text-primer">Nomor Member</th>
               <th className="px-4 py-3 text-left text-primer">Nama Member</th>
               <th className="px-4 py-3 text-left text-primer">Divisi</th>
               <th className="px-4 py-3 text-left text-primer">Aksi</th>
@@ -140,7 +140,7 @@ const MemberTable = () => {
           <tbody>
             {data.map((row, index) => (
               <tr key={row.id} className="border-b">
-                <td className="px-4 py-3">{index + 1}</td>
+                <td className="px-4 py-3">#00{index + 1}</td>
                 <td className="px-4 py-3">{row.fullName}</td>
                 <td className="px-4 py-3">{row.division}</td>
                 <td className="px-4 py-3">

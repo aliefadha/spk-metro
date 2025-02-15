@@ -8,36 +8,42 @@ const memberController = {
     const hashedPassword = await encryptPassword("@Test123");
 
     if (!fullName || !divisionId) {
-      return res.status(400).json({
-        error: true,
-        message: "Nama dan Divisi wajib diisi.",
-      });
+        return res.status(400).json({
+            error: true,
+            message: "Nama dan Divisi wajib diisi.",
+        });
     }
 
     try {
-      const newMember = await prisma.user.create({
-        data: {
-          fullName,
-          email: `${fullName.toLowerCase().replace(/\s/g, "")}@example.com`,
-          password: hashedPassword,
-          role: "MEMBER",
-          divisionId,
-        },
-      });
+        const newMember = await prisma.user.create({
+            data: {
+                fullName,
+                email: `${fullName.toLowerCase().replace(/\s/g, "")}@example.com`,
+                password: hashedPassword,
+                role: "MEMBER",
+                divisionId,
+            },
+        });
 
-      res.status(201).json({
-        error: false,
-        message: "Member created successfully",
-        data: newMember,
-      });
+        // Update totalMember di tabel division
+        await prisma.division.update({
+            where: { id: divisionId },
+            data: { totalMember: { increment: 1 } }, // Menambah 1 pada totalMember
+        });
+
+        res.status(201).json({
+            error: false,
+            message: "Member created successfully",
+            data: newMember,
+        });
     } catch (error) {
-      res.status(500).json({
-        error: true,
-        message: "Gagal menambahkan member",
-        errorDetail: error.message,
-      });
+        res.status(500).json({
+            error: true,
+            message: "Gagal menambahkan member",
+            errorDetail: error.message,
+        });
     }
-  },
+},
 
   // Get all members
   getAllMembers: async (req, res) => {

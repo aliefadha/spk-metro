@@ -168,7 +168,6 @@ const ProjectTable = () => {
         <table className="w-full">
           <thead>
             <tr className="bg-purple-50">
-              <th className="px-4 py-3 text-left text-primer">No Proyek</th>
               <th className="px-4 py-3 text-left text-primer">Nama Proyek</th>
               <th className="px-4 py-3 text-left text-primer">Bobot</th>
               <th className="px-4 py-3 text-left text-primer">Deadline</th>
@@ -179,15 +178,26 @@ const ProjectTable = () => {
             </tr>
           </thead>
           <tbody>
-            {data.map((row, index) => (
+            {data.map((row) => (
               <tr key={row.id} className="border-b">
-                <td className="px-4 py-3">{index + 1}</td>
                 <td className="px-4 py-3">{row.projectName}</td>
                 <td className="px-4 py-3">{row.bobot}</td>
                 <td className="px-4 py-3">{row.deadline}</td>
                 <td className="px-4 py-3">{row.pm}</td>
                 <td className="px-4 py-3">{row.anggota}</td>
-                <td className="px-4 py-3">{row.status}</td>
+                <td className="px-4 py-3">
+                  {" "}
+                  <span
+                    className={`inline-block px-3 py-1 rounded-full text-sm ${
+                      row.status === "DONE"
+                        ? "bg-green-100 text-green-600"
+                        : "bg-red-100 text-red-600"
+                    }`}
+                  >
+                    {row.status}
+                  </span>
+                </td>
+
                 <td className="px-4 py-3">
                   <div className="flex space-x-4">
                     <button className="p-1 hover:text-yellow-500">
