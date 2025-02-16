@@ -1,13 +1,23 @@
 import { useState, useEffect } from "react";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Check, X } from "lucide-react";
 import api from "@/utils/axios";
 import Swal from "sweetalert2";
 
 const TableKPI = () => {
   const [showModal, setShowModal] = useState(false);
-  const handleModal = () => setShowModal(!showModal);
+  const [isEditing, setIsEditing] = useState(null);
+  const [editValues, setEditValues] = useState({
+    kodeKpi: "",
+    kpiName: "",
+    target: "",
+    bobot: "",
+    char: "",
+  });
   const [data, setData] = useState([]);
 
+  const handleModal = () => setShowModal(!showModal);
+
+  // State untuk form tambah
   const [kodeKpi, setkodeKPI] = useState("");
   const [kpiName, setkpiName] = useState("");
   const [target, settarget] = useState("");
@@ -34,6 +44,62 @@ const TableKPI = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Fungsi Edit
+  const handleEdit = (metric) => {
+    setIsEditing(metric.id);
+    setEditValues({
+      kodeKpi: metric.kodeKpi,
+      kpiName: metric.kpiName,
+      target: metric.target,
+      bobot: metric.bobot,
+      char: metric.char,
+    });
+  };
+
+  const handleEditChange = (e) => {
+    setEditValues({ ...editValues, [e.target.name]: e.target.value });
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(null);
+    setEditValues({
+      kodeKpi: "",
+      kpiName: "",
+      target: "",
+      bobot: "",
+      char: "",
+    });
+  };
+
+  const handleUpdate = async (id) => {
+    try {
+      await api.put(`http://localhost:3000/api/v1/metrics/${id}`, {
+        ...editValues,
+        target: parseFloat(editValues.target),
+        bobot: parseFloat(editValues.bobot),
+        divisionId,
+      });
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "KPI berhasil diperbarui.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      fetchData();
+      setIsEditing(null);
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Memperbarui",
+        text:
+          error.response?.data?.message ||
+          "Terjadi kesalahan saat memperbarui KPI.",
+      });
+    }
+  };
 
   const handleDelete = async (id) => {
     const confirm = await Swal.fire({
@@ -132,24 +198,108 @@ const TableKPI = () => {
             </tr>
           </thead>
           <tbody>
-            {data.map((row, index) => (
+            {data.map((row) => (
               <tr key={row.id} className="border-b">
-                <td className="px-4 py-3">{row.kodeKpi}</td>
-                <td className="px-4 py-3">{row.kpiName}</td>
-                <td className="px-4 py-3">{row.char}</td>
-                <td className="px-4 py-3">{row.bobot}</td>
-                <td className="px-4 py-3">{row.target}%</td>
+                <td className="px-4 py-3">
+                  {isEditing === row.id ? (
+                    <input
+                      type="text"
+                      name="kodeKpi"
+                      value={editValues.kodeKpi}
+                      onChange={handleEditChange}
+                      className="w-full border p-1 rounded"
+                    />
+                  ) : (
+                    row.kodeKpi
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  {isEditing === row.id ? (
+                    <input
+                      type="text"
+                      name="kpiName"
+                      value={editValues.kpiName}
+                      onChange={handleEditChange}
+                      className="w-full border p-1 rounded"
+                    />
+                  ) : (
+                    row.kpiName
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  {isEditing === row.id ? (
+                    <select
+                      name="char"
+                      value={editValues.char}
+                      onChange={handleEditChange}
+                      className="w-full border p-1 rounded"
+                    >
+                      <option value="Benefit">Benefit</option>
+                      <option value="Cost">Cost</option>
+                    </select>
+                  ) : (
+                    row.char
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  {isEditing === row.id ? (
+                    <input
+                      type="number"
+                      name="bobot"
+                      value={editValues.bobot}
+                      onChange={handleEditChange}
+                      className="w-full border p-1 rounded"
+                    />
+                  ) : (
+                    row.bobot
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  {isEditing === row.id ? (
+                    <input
+                      type="number"
+                      name="target"
+                      value={editValues.target}
+                      onChange={handleEditChange}
+                      className="w-full border p-1 rounded"
+                    />
+                  ) : (
+                    `${row.target}%`
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   <div className="flex space-x-4">
-                    <button className="p-1 hover:text-yellow-500">
-                      <Edit className="w-5 h-5 text-yellow-400" />
-                    </button>
-                    <button
-                      className="p-1 hover:text-red-600"
-                      onClick={() => handleDelete(row.id)}
-                    >
-                      <Trash2 className="w-5 h-5 text-red-500" />
-                    </button>
+                    {isEditing === row.id ? (
+                      <>
+                        <button
+                          onClick={() => handleUpdate(row.id)}
+                          className="p-1 hover:text-green-500"
+                        >
+                          <Check className="w-5 h-5 text-green-500" />
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="p-1 hover:text-red-600"
+                        >
+                          <X className="w-5 h-5 text-red-500" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleEdit(row)}
+                          className="p-1 hover:text-yellow-500"
+                        >
+                          <Edit className="w-5 h-5 text-yellow-400" />
+                        </button>
+                        <button
+                          className="p-1 hover:text-red-600"
+                          onClick={() => handleDelete(row.id)}
+                        >
+                          <Trash2 className="w-5 h-5 text-red-500" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>
