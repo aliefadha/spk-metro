@@ -12,6 +12,7 @@ import {
   LogOut,
 } from 'lucide-react';
 
+
 export const sidebarLinks = [
   { icon: LayoutGrid, label: 'Dashboard', path: '/dashboard' },
   { icon: Pentagon, label: 'Division', path: '/division' },

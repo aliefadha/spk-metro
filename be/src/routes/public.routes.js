@@ -30,6 +30,7 @@ publicRoute.delete("/api/v1/project/:id", projectController.deleteProject);
 //member
 publicRoute.post("/api/v1/member", memberController.createMember);
 publicRoute.get("/api/v1/member", memberController.getAllMembers);
+publicRoute.put("/api/v1/member/:id", memberController.updateMember);
 publicRoute.delete("/api/v1/member/:id", memberController.deleteMember);
 
 //metric/kpi

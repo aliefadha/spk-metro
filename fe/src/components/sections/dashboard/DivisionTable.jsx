@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Check } from "lucide-react";
 import api from "@/utils/axios";
 import Swal from "sweetalert2";
 
@@ -7,6 +7,8 @@ const DivisionTable = () => {
   const [showModal, setShowModal] = useState(false);
   const [divisionName, setDivisionName] = useState("");
   const [data, setData] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editName, setEditName] = useState("");
 
   const fetchData = async () => {
     try {
@@ -28,13 +30,15 @@ const DivisionTable = () => {
     fetchData();
   }, []);
 
-  const handleModal = () => setShowModal(!showModal);
+  const handleModal = () => {
+    setShowModal(!showModal);
+    setEditingId(null);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
-      const response = await api.post("http://localhost:3000/api/v1/division", {
+      await api.post("http://localhost:3000/api/v1/division", {
         divisionName,
       });
 
@@ -73,7 +77,7 @@ const DivisionTable = () => {
 
     if (confirm.isConfirmed) {
       try {
-        await api.delete(`http://localhost:3000/api/v1/project/${id}`);
+        await api.delete(`http://localhost:3000/api/v1/division/${id}`);
         Swal.fire({
           icon: "success",
           title: "Berhasil!",
@@ -91,6 +95,47 @@ const DivisionTable = () => {
             "Terjadi kesalahan saat menghapus divisi.",
         });
       }
+    }
+  };
+
+  const handleEditClick = (id, currentName) => {
+    setEditingId(id);
+    setEditName(currentName);
+  };
+
+  const handleEditBlur = async (id) => {
+    if (editName.trim() === "") {
+      Swal.fire({
+        icon: "error",
+        title: "Nama tidak boleh kosong",
+        timer: 2000,
+      });
+      return;
+    }
+
+    try {
+      await api.put(`http://localhost:3000/api/v1/division/${id}`, {
+        divisionName: editName,
+      });
+
+      Swal.fire({
+        icon: "success",
+        title: "Divisi diperbarui!",
+        text: "Nama divisi berhasil diubah.",
+        timer: 1000,
+        showConfirmButton: false,
+      });
+
+      setEditingId(null);
+      await fetchData();
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Mengedit Divisi",
+        text:
+          error.response?.data?.message ||
+          "Terjadi kesalahan saat memperbarui divisi.",
+      });
     }
   };
 
@@ -121,13 +166,40 @@ const DivisionTable = () => {
             {data.map((row, index) => (
               <tr key={row.id} className="border-b">
                 <td className="px-4 py-3">#00{index + 1}</td>
-                <td className="px-4 py-3">{row.divisionName}</td>
+                <td className="px-4 py-3">
+                  {editingId === row.id ? (
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onBlur={() => handleEditBlur(row.id)}
+                      className="border rounded px-2 py-1 w-full"
+                      autoFocus
+                    />
+                  ) : (
+                    row.divisionName
+                  )}
+                </td>
                 <td className="px-4 py-3">{row.totalMember}</td>
                 <td className="px-4 py-3">
                   <div className="flex space-x-4">
-                    <button className="p-1 hover:text-yellow-500">
-                      <Edit className="w-5 h-5 text-yellow-400" />
-                    </button>
+                    {editingId === row.id ? (
+                      <button
+                        className="p-1 hover:text-green-500"
+                        onClick={() => handleEditBlur(row.id)}
+                      >
+                        <Check className="w-5 h-5 text-green-500" />
+                      </button>
+                    ) : (
+                      <button
+                        className="p-1 hover:text-yellow-500"
+                        onClick={() =>
+                          handleEditClick(row.id, row.divisionName)
+                        }
+                      >
+                        <Edit className="w-5 h-5 text-yellow-400" />
+                      </button>
+                    )}
                     <button
                       className="p-1 hover:text-red-600"
                       onClick={() => handleDelete(row.id)}

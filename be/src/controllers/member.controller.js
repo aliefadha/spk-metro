@@ -25,10 +25,9 @@ const memberController = {
             },
         });
 
-        // Update totalMember di tabel division
         await prisma.division.update({
             where: { id: divisionId },
-            data: { totalMember: { increment: 1 } }, // Menambah 1 pada totalMember
+            data: { totalMember: { increment: 1 } }, 
         });
 
         res.status(201).json({
@@ -43,6 +42,39 @@ const memberController = {
             errorDetail: error.message,
         });
     }
+},
+
+ // Update a member
+ updateMember: async (req, res) => {
+  const { id } = req.params;
+  const { fullName, divisionId } = req.body;
+
+  try {
+    const member = await prisma.user.findUnique({ where: { id } });
+    if (!member) {
+      return res.status(404).json({
+        error: true,
+        message: "Member tidak ditemukan.",
+      });
+    }
+
+    const updatedMember = await prisma.user.update({
+      where: { id },
+      data: { fullName, divisionId },
+    });
+
+    res.status(200).json({
+      error: false,
+      message: "Member updated successfully",
+      data: updatedMember,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: true,
+      message: "Gagal mengupdate member",
+      errorDetail: error.message,
+    });
+  }
 },
 
   // Get all members
@@ -85,7 +117,8 @@ const memberController = {
 
   // Delete a member
   deleteMember: async (req, res) => {
-    const { id } = req.params;
+    const { id, divisionId} = req.params;
+
 
     try {
       const member = await prisma.user.findUnique({ where: { id } });
@@ -98,6 +131,11 @@ const memberController = {
       }
 
       await prisma.user.delete({ where: { id } });
+
+      await prisma.division.update({
+          where: { id: divisionId },
+          data: { totalMember: { decrement: 1 } }, 
+      });
 
       res.status(200).json({
         error: false,
@@ -112,5 +150,7 @@ const memberController = {
     }
   },
 };
+
+
 
 module.exports = memberController;
