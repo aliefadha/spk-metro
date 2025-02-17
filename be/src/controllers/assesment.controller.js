@@ -124,57 +124,61 @@ const assessmentController = {
 
 
 
-  getAssessmentTable: async (req, res) => {
-    try {
-      const projectId = req.params.projectId; 
-  
+getAssessmentTable: async (req, res) => {
+  try {
+      const projectId = req.params.projectId;
+
+      // 1. Ambil data projectCollaborator, hanya yang isProjectManager: false
       const projectMembers = await prisma.projectCollaborator.findMany({
-        where: { projectId },
-        include: {
-          user: true, 
-        },
+          where: { 
+              projectId,
+              isProjectManager: false // Filter hanya member
+          },
+          include: {
+              user: true,
+          },
       });
-  
+
       const metrics = await prisma.metric.findMany();
-  
+
       const assessments = await prisma.assesment.findMany({
-        where: { projectId },
-        include: {
-          metric: true, 
-        },
+          where: { projectId },
+          include: {
+              metric: true,
+          },
       });
-  
+
       const result = projectMembers.map((member) => {
-        const userId = member.userId;
-        const userFullName = member.user.fullName; 
-  
-        const metricValues = metrics.map((metric) => {
-          const assessment = assessments.find(
-            (a) => a.userId === userId && a.metricId === metric.id
-          );
-          return assessment ? assessment.value : 0; 
-        });
-  
-        return {
-          userId,
-          fullName: userFullName,
-          metrics: metricValues,
-        };
+          const userId = member.userId;
+          const userFullName = member.user.fullName;
+
+          const metricValues = metrics.map((metric) => {
+              const assessment = assessments.find(
+                  (a) => a.userId === userId && a.metricId === metric.id
+              );
+              return assessment ? assessment.value : 0;
+          });
+
+          return {
+              userId,
+              fullName: userFullName,
+              metrics: metricValues,
+          };
       });
-  
+
       res.status(200).json({
-        error: false,
-        message: "Data assessment berhasil diambil",
-        data: result,
+          error: false,
+          message: "Data assessment berhasil diambil",
+          data: result,
       });
-    } catch (error) {
+  } catch (error) {
       res.status(500).json({
-        error: true,
-        message: "Gagal mengambil data assessment",
-        errorDetail: error.message,
+          error: true,
+          message: "Gagal mengambil data assessment",
+          errorDetail: error.message,
       });
-    }
-  },
+  }
+},
   
 
   // Delete an assessment

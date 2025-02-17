@@ -32,7 +32,7 @@ const AssesmentTable = () => {
       try {
         const response = await fetch("http://localhost:3000/api/v1/metrics");
         const result = await response.json();
-        setKpiList(result.data); // Simpan KPI ke state
+        setKpiList(result.data);
       } catch (error) {
         console.error("Gagal memuat data:", error);
       }

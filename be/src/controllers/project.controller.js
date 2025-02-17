@@ -64,12 +64,11 @@ const projectController = {
         }
     },
 
-    // Create a new project
     createProject: async (req, res) => {
         try {
             const { projectName, bobot, deadline, status, projectCollaborator } = req.body;
     
-            console.log("Data projectCollaborator dari request:", projectCollaborator);
+            console.log("REQ.BODY:", JSON.stringify(req.body, null, 2));
     
             const newProject = await prisma.project.create({
                 data: {
@@ -78,21 +77,27 @@ const projectController = {
                     deadline,
                     status,
                     projectCollaborator: {
-                        create: projectCollaborator,
-                    },
-                },
-                include: {
-                    projectCollaborator: {
-                        select: {
-                            userId: true,
-                            isProjectManager: true, 
-                        },
+                        create: projectCollaborator.map(collaborator => ({
+                            userId: collaborator.userId,
+                            isProjectManager: collaborator.isProjectManager,
+                        })),
                     },
                 },
             });
     
-            console.log("Data projectCollaborator setelah create:", JSON.stringify(newProject.projectCollaborator, null, 2));
+            console.log("NEW PROJECT:", JSON.stringify(newProject, null, 2));
     
+            const projectWithCollaborators = await prisma.project.findUnique({
+                where: { id: newProject.id },
+                include: { projectCollaborator: { include: { user: true } } },
+            });
+    
+            console.log("PROJECT WITH COLLABORATORS:", JSON.stringify(projectWithCollaborators, null, 2));
+    
+            const nonManagers = projectWithCollaborators.projectCollaborator.filter(collab => !collab.isProjectManager);
+    
+            console.log("NON-MANAGERS:", JSON.stringify(nonManagers, null, 2));
+            
             const metrics = await prisma.metric.findMany();
             if (metrics.length === 0) {
                 return res.status(400).json({
@@ -101,33 +106,23 @@ const projectController = {
                 });
             }
     
-            const filteredCollaborators = newProject.projectCollaborator.reduce((acc, collab) => {
-                if (!collab.isProjectManager) {
-                    acc.push(collab);
-                }
-                return acc;
-            }, []);
-            
-            console.log("Filtered Collaborators (Hanya isProjectManager: false):", JSON.stringify(filteredCollaborators, null, 2));
-            
-    
-            const assessmentsData = filteredCollaborators.map(collaborator => {
+            console.log("METRICS:", JSON.stringify(metrics, null, 2));
+            const assessmentsData = nonManagers.flatMap(collaborator => {
                 return metrics.map(metric => ({
                     projectId: newProject.id,
                     metricId: metric.id,
                     userId: collaborator.userId,
-                    value: 0, 
-                    assesmentDate: new Date().toISOString().split("T")[0], 
+                    value: 0,
+                    assesmentDate: new Date().toISOString().split("T")[0],
                 }));
-            }).flat();  
-            
+            });
     
-            console.log("Data assessmentsData sebelum insert:", JSON.stringify(assessmentsData, null, 2));
+            console.log("ASSESSMENTS DATA:", JSON.stringify(assessmentsData, null, 2));
     
             if (assessmentsData.length > 0) {
                 await prisma.assesment.createMany({
                     data: assessmentsData,
-                    skipDuplicates: true, 
+                    skipDuplicates: true,
                 });
             }
     
@@ -146,7 +141,6 @@ const projectController = {
             });
         }
     },
-    
     
     // Update a project
     updateProject: async (req, res) => {
