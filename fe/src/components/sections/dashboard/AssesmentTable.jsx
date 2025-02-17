@@ -1,18 +1,51 @@
 import { useState, useEffect } from "react";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Check, X } from "lucide-react";
 import api from "@/utils/axios";
+import Swal from "sweetalert2";
 
 const AssesmentTable = () => {
   const [assessments, setAssessments] = useState([]);
   const [data, setData] = useState([]);
   const [kpiList, setKpiList] = useState([]);
+  const [isEditing, setIsEditing] = useState(null);
+  const [editValues, setEditValues] = useState({});
 
+  // Fetch KPI Metrics
+  useEffect(() => {
+    const fetchKPI = async () => {
+      try {
+        const response = await api.get("http://localhost:3000/api/v1/metrics");
+        setKpiList(response.data.data);
+      } catch (error) {
+        console.error("Gagal memuat KPI:", error);
+      }
+    };
+
+    fetchKPI();
+  }, []);
+
+  // Fetch Assessments Data
   const fetchData = async () => {
     try {
-      const response = await api.get("http://localhost:3000/api/v1/division");
-      setData(response.data.data);
+      const response = await api.get(
+        "http://localhost:3000/api/v1/assessments"
+      );
+      console.log("Response Data:", response.data);
+
+      // Mapping metrics ke object agar mudah digunakan
+      const formattedData = response.data.data.map((item) => ({
+        userId: item.userId,
+        fullName: item.fullName,
+        metrics: item.metrics.reduce((acc, metric) => {
+          acc[metric.metricId] = metric.value; // Simpan metric berdasarkan ID-nya
+          return acc;
+        }, {}),
+      }));
+
+      console.log("Formatted Data for State:", formattedData);
+      setAssessments(formattedData);
     } catch (error) {
-      console.error("Gagal memuat data:", error);
+      console.error("Gagal memuat data assessment:", error);
       Swal.fire({
         icon: "error",
         title: "Gagal Memuat Data",
@@ -27,41 +60,59 @@ const AssesmentTable = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    const fetchKPI = async () => {
-      try {
-        const response = await fetch("http://localhost:3000/api/v1/metrics");
-        const result = await response.json();
-        setKpiList(result.data);
-      } catch (error) {
-        console.error("Gagal memuat data:", error);
-      }
-    };
+  // Fungsi untuk masuk ke mode edit
+  const handleEdit = (userId, metrics) => {
+    setIsEditing(userId);
+    setEditValues({ ...metrics });
+  };
 
-    fetchKPI();
-  }, []);
+  // Fungsi untuk mengubah nilai input saat edit
+  const handleEditChange = (metricId, newValue) => {
+    setEditValues((prev) => ({
+      ...prev,
+      [metricId]: newValue,
+    }));
+  };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(
-          "http://localhost:3000/api/v1/assessments"
-        );
-        const result = await response.json();
+  // Fungsi untuk menyimpan perubahan
+  const handleUpdate = async (userId) => {
+    try {
+      const updateData = {
+        userId,
+        assessments: Object.entries(editValues).map(([metricId, value]) => ({
+          metricId,
+          value: parseInt(value, 10) || 0, // Pastikan angka
+        })),
+      };
 
-        if (!response.ok)
-          throw new Error(result.message || "Failed to fetch data");
+      await api.put("http://localhost:3000/api/v1/assessments", updateData);
 
-        setAssessments(result.data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Assessment berhasil diperbarui.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
 
-    fetchData();
-  }, []);
+      setIsEditing(null);
+      fetchData(); // Ambil ulang data setelah update
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Memperbarui",
+        text:
+          error.response?.data?.message ||
+          "Terjadi kesalahan saat memperbarui assessment.",
+      });
+    }
+  };
+
+  // Fungsi untuk membatalkan edit
+  const handleCancelEdit = () => {
+    setIsEditing(null);
+    setEditValues({});
+  };
 
   return (
     <div className="bg-white rounded-lg p-6 mt-8">
@@ -82,8 +133,8 @@ const AssesmentTable = () => {
           <thead>
             <tr className="bg-purple-50">
               <th className="px-4 py-3 text-left text-primer">Nama Member</th>
-              {kpiList.map((kpi, index) => (
-                <th key={index} className="px-4 py-3 text-left text-primer">
+              {kpiList.map((kpi) => (
+                <th key={kpi.id} className="px-4 py-3 text-left text-primer">
                   {kpi.kpiName}
                 </th>
               ))}
@@ -91,19 +142,55 @@ const AssesmentTable = () => {
             </tr>
           </thead>
           <tbody>
-            {assessments.map((item, index) => (
-              <tr key={index} className="border-b">
+            {assessments.map((item) => (
+              <tr key={item.userId} className="border-b">
                 <td className="px-4 py-3">{item.fullName}</td>
-                {item.metrics.map((metric, i) => (
-                  <td className="px-4 py-3 text-left" key={i}>
-                    {metric !== null ? metric : "-"}
+
+                {/* Menampilkan data metric dengan key metricId */}
+                {kpiList.map((kpi) => (
+                  <td key={kpi.id} className="px-4 py-3 text-left">
+                    {isEditing === item.userId ? (
+                      <input
+                        type="number"
+                        value={editValues[kpi.id] || ""}
+                        onChange={(e) =>
+                          handleEditChange(kpi.id, e.target.value)
+                        }
+                        className="w-full border p-1 rounded"
+                      />
+                    ) : item.metrics[kpi.id] !== undefined ? (
+                      item.metrics[kpi.id]
+                    ) : (
+                      "-"
+                    )}
                   </td>
                 ))}
+
                 <td className="px-4 py-3">
                   <div className="flex space-x-4">
-                    <button className="p-1 hover:text-yellow-500">
-                      <Edit className="w-5 h-5 text-yellow-400" />
-                    </button>
+                    {isEditing === item.userId ? (
+                      <>
+                        <button
+                          onClick={() => handleUpdate(item.userId)}
+                          className="p-1 hover:text-green-500"
+                        >
+                          <Check className="w-5 h-5 text-green-500" />
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="p-1 hover:text-red-600"
+                        >
+                          <X className="w-5 h-5 text-red-500" />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => handleEdit(item.userId, item.metrics)}
+                        className="p-1 hover:text-yellow-500"
+                      >
+                        <Edit className="w-5 h-5 text-yellow-400" />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

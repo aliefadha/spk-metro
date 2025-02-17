@@ -44,7 +44,7 @@ publicRoute.delete("/api/v1/metrics/:id", kpiController.deleteKpi);
 publicRoute.post("/api/v1/assessments", assessmentController.createAssessment);
 publicRoute.get("/api/v1/assessments", assessmentController.getAssessmentTable);
 publicRoute.get("/api/v1/assessments/user", assessmentController.getAssessmentsByUser);
-publicRoute.put("/api/v1/assessments/:id", assessmentController.updateAssessment);
+publicRoute.put("/api/v1/assessments", assessmentController.updateAssessment);
 publicRoute.delete("/api/v1/assessments/:id", assessmentController.deleteAssessment);
 
 

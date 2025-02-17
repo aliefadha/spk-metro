@@ -41,23 +41,45 @@ const assessmentController = {
     }
   },
 
-  // Get all assessments
   getAllAssessments: async (req, res) => {
     try {
-      const assessments = await prisma.assesment.findMany();
-      res.status(200).json({
-        error: false,
-        message: "Data assessment berhasil diambil",
-        data: assessments,
-      });
+        const assessments = await prisma.assesment.findMany({
+            include: {
+                user: { select: { fullName: true } },  
+                metric: { select: { id: true, name: true } },  
+            },
+        });
+
+        const groupedAssessments = assessments.reduce((acc, item) => {
+            let userIndex = acc.findIndex(u => u.userId === item.userId);
+            if (userIndex === -1) {
+                acc.push({
+                    userId: item.userId,
+                    fullName: item.user.fullName,
+                    metrics: {
+                        [item.metric.name]: item.value  
+                    }
+                });
+            } else {
+                acc[userIndex].metrics[item.metric.name] = item.value;
+            }
+            return acc;
+        }, []);
+
+        res.status(200).json({
+            error: false,
+            message: "Data assessment berhasil diambil",
+            data: groupedAssessments,
+        });
     } catch (error) {
-      res.status(500).json({
-        error: true,
-        message: "Gagal mengambil data assessment",
-        errorDetail: error.message,
-      });
+        res.status(500).json({
+            error: true,
+            message: "Gagal mengambil data assessment",
+            errorDetail: error.message,
+        });
     }
-  },
+},
+
 
   // Get assessment by userId
   getAssessmentsByUser: async (req, res) => {
@@ -91,36 +113,50 @@ const assessmentController = {
 
   updateAssessment: async (req, res) => {
     try {
-        const { id } = req.params;
-        const { value } = req.body;
+        const { userId, assessments } = req.body;
 
-        // Validasi input
-        if (!value || !Array.isArray(value)) {
+        console.log("Incoming Update Request:", req.body);
+
+        if (!userId || !Array.isArray(assessments) || assessments.length === 0) {
             return res.status(400).json({
                 error: true,
-                message: "Value harus berupa array angka",
+                message: "UserId dan assessments (array) harus disertakan",
             });
         }
 
-        // Update assessment di database
-        const updatedAssessment = await prisma.assesment.update({
-            where: { id },
-            data: { value },
+        // Cek apakah assessment ada sebelum update
+        const existingAssessments = await prisma.assesment.findMany({
+            where: { userId }
         });
+        console.log("Existing Assessments:", existingAssessments);
+
+        // Update setiap assessment berdasarkan userId + metricId
+        const updatePromises = assessments.map(async ({ metricId, value }) => {
+            const result = await prisma.assesment.updateMany({
+                where: { userId, metricId },
+                data: { value: parseInt(value, 10) },
+            });
+
+            console.log(`Updating metricId ${metricId} with value ${value}:`, result);
+            return result;
+        });
+
+        await Promise.all(updatePromises);
 
         res.status(200).json({
             error: false,
             message: "Assessment berhasil diperbarui",
-            data: updatedAssessment,
         });
-    } catch (err) {
+    } catch (error) {
+        console.error("Update Error:", error);
         res.status(500).json({
             error: true,
             message: "Gagal memperbarui assessment",
-            errorDetail: err.message,
+            errorDetail: error.message,
         });
     }
 },
+
 
 
 
@@ -128,26 +164,26 @@ getAssessmentTable: async (req, res) => {
   try {
       const projectId = req.params.projectId;
 
-      // 1. Ambil data projectCollaborator, hanya yang isProjectManager: false
+      // Ambil semua member yang bukan PM dari proyek
       const projectMembers = await prisma.projectCollaborator.findMany({
           where: { 
               projectId,
-              isProjectManager: false // Filter hanya member
+              isProjectManager: false 
           },
           include: {
               user: true,
           },
       });
 
+      // Ambil semua KPI (metrics)
       const metrics = await prisma.metric.findMany();
 
+      // Ambil semua assessment untuk proyek ini
       const assessments = await prisma.assesment.findMany({
           where: { projectId },
-          include: {
-              metric: true,
-          },
       });
 
+      // Format response dengan metricId & value
       const result = projectMembers.map((member) => {
           const userId = member.userId;
           const userFullName = member.user.fullName;
@@ -156,13 +192,16 @@ getAssessmentTable: async (req, res) => {
               const assessment = assessments.find(
                   (a) => a.userId === userId && a.metricId === metric.id
               );
-              return assessment ? assessment.value : 0;
+              return {
+                  metricId: metric.id,
+                  value: assessment ? assessment.value : 0
+              };
           });
 
           return {
               userId,
               fullName: userFullName,
-              metrics: metricValues,
+              metrics: metricValues, // Sekarang sudah ada metricId!
           };
       });
 
@@ -179,6 +218,7 @@ getAssessmentTable: async (req, res) => {
       });
   }
 },
+
   
 
   // Delete an assessment

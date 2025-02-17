@@ -19,12 +19,21 @@ GET http://localhost:3000/api/v1/assessments/user?userId=05130cd0-b8d7-47ff-bd67
 Content-Type: application/json
 
 ### Update Assessment
-PUT http://localhost:3000/api/v1/assessments/1bbe5705-12bf-47df-9a04-ac984293d637
+PUT http://localhost:3000/api/v1/assessments
 Content-Type: application/json
 
 {
-  "value": [5, 8, 7, 6, 9]
+  "userId": "447384ec-4fe3-4663-9807-5c02cddf07af",
+  "assessments": [
+    { "metricId": "0eb5863d-b6c2-4325-b043-f2196bfca8c3", "value": 5 },
+    { "metricId": "b1dcf949-4cbd-4913-980f-33f9b60aec50", "value": 3 },
+    { "metricId": "24d540f9-777d-4938-a2fb-a4dc042f07b4", "value": 4 },
+    { "metricId": "bd894298-8249-445f-ade8-f9feaf87ba6c", "value": 2 },
+    { "metricId": "f37e9484-183e-47f1-90c6-fc30e0be0036", "value": 1 }
+  ]
 }
+
+
 
 ### Delete Assessment
 DELETE http://localhost:3000/api/v1/assessments/be925de8-fd48-4f1c-9a0e-901c4457f739
