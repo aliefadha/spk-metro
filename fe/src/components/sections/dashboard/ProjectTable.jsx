@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Check, X } from "lucide-react";
 import api from "@/utils/axios";
 import Swal from "sweetalert2";
+import Select from "react-select";
 
 const ProjectTable = () => {
   const [showModal, setShowModal] = useState(false);
@@ -10,12 +11,24 @@ const ProjectTable = () => {
 
   const [anggota, setAnggota] = useState([]);
   const [selectedAnggota, setSelectedAnggota] = useState([]);
+  const [selectedEditAnggota, setSelectedEditAnggota] = useState([]);
 
+  // State untuk form tambah proyek
   const [formData, setFormData] = useState({
     projectName: "",
     bobot: "",
     deadline: "",
     status: "BACKLOG",
+    projectManager: "",
+  });
+
+  // State untuk mode edit
+  const [isEditing, setIsEditing] = useState(null);
+  const [editValues, setEditValues] = useState({
+    projectName: "",
+    bobot: "",
+    deadline: "",
+    status: "",
     projectManager: "",
   });
 
@@ -27,7 +40,7 @@ const ProjectTable = () => {
         const pm =
           project.projectCollaborator.find((col) => col.isProjectManager)?.user
             .fullName || "N/A";
-        const anggota =
+        const anggotaList =
           project.projectCollaborator
             .filter((col) => !col.isProjectManager)
             .map((col) => col.user.fullName)
@@ -36,7 +49,7 @@ const ProjectTable = () => {
         return {
           ...project,
           pm,
-          anggota,
+          anggota: anggotaList,
         };
       });
 
@@ -112,9 +125,101 @@ const ProjectTable = () => {
       Swal.fire("Sukses", "Proyek berhasil ditambahkan", "success");
       fetchData();
       setShowModal(false);
+      setFormData({
+        projectName: "",
+        bobot: "",
+        deadline: "",
+        status: "BACKLOG",
+        projectManager: "",
+      });
+      setSelectedAnggota([]);
     } catch (error) {
       console.error("Gagal menambahkan proyek:", error);
       Swal.fire("Error", "Gagal menambahkan proyek", "error");
+    }
+  };
+
+  // Fungsi untuk memulai mode edit
+  const handleEdit = (project) => {
+    setIsEditing(project.id);
+    setEditValues({
+      projectName: project.projectName,
+      bobot: project.bobot,
+      deadline: project.deadline,
+      status: project.status,
+      projectManager:
+        project.projectCollaborator.find((col) => col.isProjectManager)
+          ?.userId || "",
+    });
+
+    setSelectedEditAnggota(
+      project.projectCollaborator
+        .filter((col) => !col.isProjectManager)
+        .map((col) => col.userId)
+    );
+  };
+
+  const handleEditCheckboxChange = (e) => {
+    const { value, checked } = e.target;
+    setSelectedEditAnggota((prev) =>
+      checked ? [...prev, value] : prev.filter((id) => id !== value)
+    );
+  };
+
+  const handleEditChange = (e) => {
+    setEditValues({ ...editValues, [e.target.name]: e.target.value });
+  };
+
+  // Fungsi untuk membatalkan mode edit
+  const handleCancelEdit = () => {
+    setIsEditing(null);
+    setEditValues({
+      projectName: "",
+      bobot: "",
+      deadline: "",
+      status: "",
+      projectManager: "",
+    });
+  };
+
+  // Fungsi untuk menyimpan update melalui API PUT
+  const handleUpdate = async (id) => {
+    try {
+      const updatedProject = {
+        projectName: editValues.projectName,
+        bobot: parseFloat(editValues.bobot),
+        deadline: editValues.deadline,
+        status: editValues.status,
+        projectCollaborator: [
+          { userId: editValues.projectManager, isProjectManager: true },
+          ...selectedEditAnggota.map((userId) => ({
+            userId,
+            isProjectManager: false,
+          })),
+        ],
+      };
+
+      await api.put(
+        `http://localhost:3000/api/v1/project/${id}`,
+        updatedProject
+      );
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Proyek berhasil diperbarui.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      fetchData();
+      setIsEditing(null);
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Memperbarui",
+        text:
+          error.response?.data?.message ||
+          "Terjadi kesalahan saat memperbarui proyek.",
+      });
     }
   };
 
@@ -138,7 +243,7 @@ const ProjectTable = () => {
           timer: 2000,
           showConfirmButton: false,
         });
-        await fetchData();
+        fetchData();
       } catch (error) {
         Swal.fire({
           icon: "error",
@@ -157,13 +262,12 @@ const ProjectTable = () => {
         <h2 className="text-xl font-semibold mr-3">Divisi Developer</h2>
         <button
           onClick={handleModal}
-          className="px-4 py-2 rounded-lg bg-primer text-white  ml-auto"
+          className="px-4 py-2 rounded-lg bg-primer text-white ml-auto"
         >
           + Tambah Proyek
         </button>
       </div>
 
-      {/* Tabel */}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -180,35 +284,156 @@ const ProjectTable = () => {
           <tbody>
             {data.map((row) => (
               <tr key={row.id} className="border-b">
-                <td className="px-4 py-3">{row.projectName}</td>
-                <td className="px-4 py-3">{row.bobot}</td>
-                <td className="px-4 py-3">{row.deadline}</td>
-                <td className="px-4 py-3">{row.pm}</td>
-                <td className="px-4 py-3">{row.anggota}</td>
+                {/* Nama Proyek */}
                 <td className="px-4 py-3">
-                  {" "}
-                  <span
-                    className={`inline-block px-3 py-1 rounded-full text-sm ${
-                      row.status === "DONE"
-                        ? "bg-green-100 text-green-600"
-                        : "bg-red-100 text-red-600"
-                    }`}
-                  >
-                    {row.status}
-                  </span>
+                  {isEditing === row.id ? (
+                    <input
+                      type="text"
+                      name="projectName"
+                      value={editValues.projectName}
+                      onChange={handleEditChange}
+                      className="w-full border p-1 rounded"
+                    />
+                  ) : (
+                    row.projectName
+                  )}
                 </td>
 
+                {/* Bobot */}
+                <td className="px-4 py-3">
+                  {isEditing === row.id ? (
+                    <input
+                      type="number"
+                      name="bobot"
+                      step="0.1"
+                      min="0"
+                      value={editValues.bobot}
+                      onChange={handleEditChange}
+                      className="w-full border p-1 rounded"
+                    />
+                  ) : (
+                    row.bobot
+                  )}
+                </td>
+
+                {/* Deadline */}
+                <td className="px-4 py-3">
+                  {isEditing === row.id ? (
+                    <input
+                      type="date"
+                      name="deadline"
+                      value={editValues.deadline}
+                      onChange={handleEditChange}
+                      className="w-full border p-1 rounded"
+                    />
+                  ) : (
+                    row.deadline
+                  )}
+                </td>
+
+                {/* PM */}
+                <td className="px-4 py-3">
+                  {isEditing === row.id ? (
+                    <select
+                      name="projectManager"
+                      value={editValues.projectManager}
+                      onChange={handleEditChange}
+                      className="w-full border p-1 rounded"
+                    >
+                      <option value="">Pilih PM</option>
+                      {anggota.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.fullName}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    row.pm
+                  )}
+                </td>
+
+                {/* Anggota */}
+                <td className="px-4 py-3">
+                  {isEditing === row.id ? (
+                    <div className="flex flex-wrap gap-2">
+                      {anggota.map((item) => (
+                        <label key={item.id} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            value={item.id}
+                            checked={selectedEditAnggota.includes(item.id)}
+                            onChange={handleEditCheckboxChange}
+                            className="mr-2"
+                          />
+                          {item.fullName}
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    row.anggota
+                  )}
+                </td>
+
+                {/* Status */}
+                <td className="px-4 py-3">
+                  {isEditing === row.id ? (
+                    <select
+                      name="status"
+                      value={editValues.status}
+                      onChange={handleEditChange}
+                      className="w-full border p-1 rounded"
+                    >
+                      <option value="BACKLOG">Backlog</option>
+                      <option value="ONPROGRESS">On Progress</option>
+                      <option value="DONE">Done</option>
+                    </select>
+                  ) : (
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-sm ${
+                        row.status === "DONE"
+                          ? "bg-green-100 text-green-600"
+                          : "bg-red-100 text-red-600"
+                      }`}
+                    >
+                      {row.status}
+                    </span>
+                  )}
+                </td>
+
+                {/* Aksi */}
                 <td className="px-4 py-3">
                   <div className="flex space-x-4">
-                    <button className="p-1 hover:text-yellow-500">
-                      <Edit className="w-5 h-5 text-yellow-400" />
-                    </button>
-                    <button
-                      className="p-1 hover:text-red-600"
-                      onClick={() => handleDelete(row.id)}
-                    >
-                      <Trash2 className="w-5 h-5 text-red-500" />
-                    </button>
+                    {isEditing === row.id ? (
+                      <>
+                        <button
+                          onClick={() => handleUpdate(row.id)}
+                          className="p-1 hover:text-green-500"
+                        >
+                          <Check className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="p-1 hover:text-red-600"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleEdit(row)}
+                          className="p-1 hover:text-yellow-500"
+                        >
+                          <Edit className="w-5 h-5 text-yellow-400" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(row.id)}
+                          className="p-1 hover:text-red-600"
+                        >
+                          <Trash2 className="w-5 h-5 text-red-500" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -217,7 +442,7 @@ const ProjectTable = () => {
         </table>
       </div>
 
-      {/* Modal */}
+      {/* Modal tambah proyek */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg shadow-lg w-96">
@@ -279,7 +504,7 @@ const ProjectTable = () => {
                 </label>
                 <div className="flex flex-wrap gap-4">
                   {anggota.map((item) => (
-                    <div key={item.id} className="flex items-center mb-2ß">
+                    <div key={item.id} className="flex items-center mb-2">
                       <input
                         type="checkbox"
                         value={item.id}
@@ -291,7 +516,6 @@ const ProjectTable = () => {
                   ))}
                 </div>
               </div>
-
               <div className="mb-4 flex items-center">
                 <label className="w-1/3 text-sm font-medium">Status*</label>
                 <select

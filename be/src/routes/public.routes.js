@@ -24,7 +24,7 @@ publicRoute.delete("/api/v1/division/:id", divisionController.deleteDivision);
 publicRoute.get("/api/v1/projects", projectController.getAllProjects);
 publicRoute.get("/api/v1/project/:id", projectController.getProjectById);
 publicRoute.post("/api/v1/project", projectController.createProject);
-publicRoute.patch("/api/v1/project/:id", projectController.updateProject);
+publicRoute.put("/api/v1/project/:id", projectController.updateProject);
 publicRoute.delete("/api/v1/project/:id", projectController.deleteProject);
 
 //member
