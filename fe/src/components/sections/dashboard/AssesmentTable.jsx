@@ -148,7 +148,7 @@ const AssesmentTable = () => {
 
                 {/* Menampilkan data metric dengan key metricId */}
                 {kpiList.map((kpi) => (
-                  <td key={kpi.id} className="px-4 py-3 text-left">
+                  <td key={kpi.id} className="px-4 py-3 text-center ">
                     {isEditing === item.userId ? (
                       <input
                         type="number"

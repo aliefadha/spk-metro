@@ -13,7 +13,7 @@ const kpiController = {
   }
 
   try {
-    const targetInPercent = target / 100;
+    const targetInPercent = target;
     const newKpi = await prisma.metric.create({
       data: {
         kodeKpi,
@@ -48,7 +48,7 @@ getAllKpis: async (req, res) => {
       id: kpi.id,
       kodeKpi: kpi.kodeKpi,
       kpiName: kpi.kpiName,
-      target: kpi.target * 100,  
+      target: kpi.target,  
       bobot: kpi.bobot,
       char: kpi.char,
       divisionId: kpi.divisionId,  
@@ -92,7 +92,7 @@ getKpisByDivision: async (req, res) => {
       id: kpi.id,
       kodeKpi: kpi.kodeKpi,
       kpiName: kpi.kpiName,
-      target: kpi.target * 100,  
+      target: kpi.target,  
       bobot: kpi.bobot,
       char: kpi.char,
       divisionId: kpi.divisionId,  
@@ -136,7 +136,7 @@ editKpi: async (req, res) => {
       });
     }
 
-    const targetInPercent = target / 100;
+    const targetInPercent = target ;
     const updatedKpi = await prisma.metric.update({
       where: { id },
       data: {

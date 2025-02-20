@@ -264,7 +264,7 @@ const TableKPI = () => {
                       className="w-full border p-1 rounded"
                     />
                   ) : (
-                    `${row.target}%`
+                    `${row.target}`
                   )}
                 </td>
                 <td className="px-4 py-3">
@@ -362,7 +362,7 @@ const TableKPI = () => {
               </div>
               <div className="mb-4">
                 <label className="block mb-2 text-sm font-medium">
-                  Target*
+                  Target (Skala 1-100)*
                 </label>
                 <input
                   type="text"
