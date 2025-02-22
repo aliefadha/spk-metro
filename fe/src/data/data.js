@@ -25,8 +25,8 @@ export const sidebarLinks = [
     label: 'KPI Reports',
     path: '/kpi-reports',
     subItems: [
-      { label: 'Project', path: '/kpi-reports?sub=project' },
-      { label: 'Individual', path: '/kpi-reports?sub=individual' }
+      { label: 'Project', path: '/kpi-reports/project' },
+      { label: 'Individual', path: '/kpi-reports/individual' }
     ]
   },
   { icon: Calculator, label: 'SPK Calculation', path: '/spk-calculation' },

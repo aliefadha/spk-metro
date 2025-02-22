@@ -30,28 +30,66 @@ const KPIReportTableIndividual = () => {
               <th className="px-4 py-3 text-left text-primer">Status</th>
             </tr>
           </thead>
-          {/* <tbody>
-            {data.map((row) => (
-              <tr key={row.id} className="border-b">
-                <td className="px-4 py-3">{row.id}</td>
-                <td className="px-4 py-3">{row.nama_divisi}</td>
-                <td className="px-4 py-3">{row.jumlah_anggota}</td>
-                <td className="px-4 py-3">{row.jumlah_anggota}</td>
-                <td className="px-4 py-3">{row.jumlah_anggota}</td>
-                <td className="px-4 py-3">
-                  <div className="flex space-x-4">
-                    <button className="p-1 hover:text-yellow-500">
-                      <Edit className="w-5 h-5 text-yellow-400" />
-                    </button>
-                    <button className="p-1 hover:text-red-600">
-                      <Trash2 className="w-5 h-5 text-red-500" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody> */}
+          <tbody>
+            <tr className="border-b">
+              <td className="px-4 py-3">Dummy</td>
+              <td className="px-4 py-3">Dummy</td>
+              <td className="px-4 py-3">Dummy</td>
+              <td className="px-4 py-3">Dummy</td>
+              <td className="px-4 py-3">Dummy</td>
+              <td className="px-4 py-3">
+                <div className="flex space-x-4">
+                  <button className="p-1 hover:text-yellow-500">
+                    <Edit className="w-5 h-5 text-yellow-400" />
+                  </button>
+                  <button className="p-1 hover:text-red-600">
+                    <Trash2 className="w-5 h-5 text-red-500" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr className="border-b">
+              <td className="px-4 py-3">Dummy</td>
+              <td className="px-4 py-3">Dummy</td>
+              <td className="px-4 py-3">Dummy</td>
+              <td className="px-4 py-3">Dummy</td>
+              <td className="px-4 py-3">Dummy</td>
+              <td className="px-4 py-3">
+                <div className="flex space-x-4">
+                  <button className="p-1 hover:text-yellow-500">
+                    <Edit className="w-5 h-5 text-yellow-400" />
+                  </button>
+                  <button className="p-1 hover:text-red-600">
+                    <Trash2 className="w-5 h-5 text-red-500" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr className="border-b">
+              <td className="px-4 py-3">Dummy</td>
+              <td className="px-4 py-3">Dummy</td>
+              <td className="px-4 py-3">Dummy</td>
+              <td className="px-4 py-3">Dummy</td>
+              <td className="px-4 py-3">Dummy</td>
+              <td className="px-4 py-3">
+                <div className="flex space-x-4">
+                  <button className="p-1 hover:text-yellow-500">
+                    <Edit className="w-5 h-5 text-yellow-400" />
+                  </button>
+                  <button className="p-1 hover:text-red-600">
+                    <Trash2 className="w-5 h-5 text-red-500" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
         </table>
+      </div>
+
+      <div className="overflow-x-auto py-10 justify-content-center">
+        <button className="px-4 py-2 border border-primer rounded-lg bg-primer text-white">
+          Skor KPI Reza adalah 98.2 (Not Achieved)
+        </button>
       </div>
 
       {/* Modal */}

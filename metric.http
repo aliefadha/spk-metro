@@ -1,0 +1,7 @@
+POST http://localhost:3000/api/v1/kpi-reports
+Content-Type: application/json
+
+{
+    "userId": "48620d76-1a4a-49dc-ad17-50a3a3bf8854",
+    "projectId": "37a5c643-dd9c-44f9-93a2-6aac6737c37d"
+}

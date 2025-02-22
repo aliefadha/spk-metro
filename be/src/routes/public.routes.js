@@ -7,6 +7,7 @@ const memberController = require("../controllers/member.controller.js");
 const kpiController = require ("../controllers/kpi.controller.js")
 const assessmentController = require ("../controllers/assesment.controller.js")
 const dashboardController = require ("../controllers/dashboard.controller.js")
+const metricController = require ("../controllers/metric.controller.js")
 
 publicRoute.post("/api/v1/login", userController.login);
 
@@ -46,6 +47,10 @@ publicRoute.get("/api/v1/assessments", assessmentController.getAssessmentTable);
 publicRoute.get("/api/v1/assessments/user", assessmentController.getAssessmentsByUser);
 publicRoute.put("/api/v1/assessments", assessmentController.updateAssessment);
 publicRoute.delete("/api/v1/assessments/:id", assessmentController.deleteAssessment);
+
+//metric
+publicRoute.post("/api/v1/kpi-reports", metricController.getKPIReportByUser);
+
 
 
 module.exports = publicRoute;

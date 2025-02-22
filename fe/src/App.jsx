@@ -32,9 +32,9 @@ export default function App() {
           <Route path="/kpi" element={<KpiPage />} />
           <Route path="/assesment" element={<AssesmentPage />} />
           <Route path="/kpi-reports" element={<KpiReportPage />} />
-          <Route path="/kpi-reports?sub=project" element={<KpiReportPage />} />
+          <Route path="/kpi-reports/project" element={<KpiReportPage />} />
           <Route
-            path="/kpi-reports?sub=individual"
+            path="/kpi-reports/individual"
             element={<KpiReportPageIndividual />}
           />
           <Route path="/spk-calculation" element={<SpkCalculationPage />} />
