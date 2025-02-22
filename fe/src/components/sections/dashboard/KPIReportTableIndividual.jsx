@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Edit, Trash2 } from "lucide-react";
 
-const KPIReportTable = () => {
+const KPIReportTableIndividual = () => {
   const [showModal, setShowModal] = useState(false);
   const handleModal = () => setShowModal(!showModal);
 
@@ -120,4 +120,4 @@ const KPIReportTable = () => {
   );
 };
 
-export default KPIReportTable;
+export default KPIReportTableIndividual;
