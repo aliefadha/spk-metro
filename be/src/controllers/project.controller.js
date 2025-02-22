@@ -212,6 +212,44 @@ const projectController = {
             });
         }
     },
+
+    getProjectCollaborators : async (req, res) => {
+        try {
+            const { projectId } = req.params; // Ambil projectId dari URL
+    
+            const collaborators = await prisma.projectCollaborator.findMany({
+                where: { projectId },
+                include: { user: true }, // Ambil data user terkait
+            });
+    
+            if (!collaborators.length) {
+                return res.status(404).json({
+                    error: true,
+                    message: "Tidak ada anggota untuk project ini",
+                });
+            }
+    
+            // Format data agar hanya mengirim userId & fullName
+            const result = collaborators.map((col) => ({
+                userId: col.userId,
+                fullName: col.user.fullName,
+            }));
+    
+            res.status(200).json({
+                error: false,
+                message: "Data anggota proyek berhasil diambil",
+                data: result,
+            });
+        } catch (error) {
+            console.error("Gagal mengambil data anggota proyek:", error);
+            res.status(500).json({
+                error: true,
+                message: "Gagal mengambil data anggota proyek",
+                errorDetail: error.message,
+            });
+        }
+    },
+    
     
 };
 

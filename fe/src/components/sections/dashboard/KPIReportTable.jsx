@@ -1,121 +1,134 @@
-import { useState } from "react";
-import { Edit, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import api from "@/utils/axios"; // Sesuaikan dengan path axios-mu
 
 const KPIReportTable = () => {
-  const [showModal, setShowModal] = useState(false);
-  const handleModal = () => setShowModal(!showModal);
+  const [selectedProject, setSelectedProject] = useState(""); // Simpan projectId
+  const [selectedUser, setSelectedUser] = useState(""); // Simpan userId
+  const [projects, setProjects] = useState([]); // Data project dropdown
+  const [users, setUsers] = useState([]); // Data user dropdown
+  const [reportData, setReportData] = useState([]); // Data KPI Report
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await api.get("http://localhost:3000/api/v1/projects");
+        setProjects(response.data.data);
+      } catch (error) {
+        console.error("Gagal mengambil data project:", error);
+      }
+    };
+    fetchProjects();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedProject) return;
+
+    const fetchUsers = async () => {
+      try {
+        const response = await api.get(
+          `http://localhost:3000/api/v1/project/project-collaborators/${selectedProject}`
+        );
+        setUsers(response.data.data);
+      } catch (error) {
+        console.error("Gagal mengambil data user:", error);
+      }
+    };
+    fetchUsers();
+  }, [selectedProject]);
+
+  useEffect(() => {
+    if (!selectedUser || !selectedProject) return;
+
+    const fetchReport = async () => {
+      try {
+        const response = await api.post(
+          "http://localhost:3000/api/v1/kpi-reports",
+          { userId: selectedUser, projectId: selectedProject }
+        );
+        setReportData(response.data.data);
+      } catch (error) {
+        console.error("Gagal mengambil data KPI Report:", error);
+      }
+    };
+    fetchReport();
+  }, [selectedUser, selectedProject]);
 
   return (
     <div className="bg-white rounded-lg p-6 mt-8">
-      <div className="flex flex-col sm:flex-row gap-2 mb-6 ">
-        <h2 className="text-xl font-semibold mr-3">Divisi Developer</h2>
-        <select className="px-4 py-2 rounded-lg bg-primer text-white min-w-[200px] ">
-          <option value="002">002 - E-Commerce Resong</option>
+      <div className="flex flex-col sm:flex-row gap-2 mb-6">
+        <h2 className="text-xl font-semibold mr-3">Laporan KPI</h2>
+
+        <select
+          value={selectedProject}
+          onChange={(e) => setSelectedProject(e.target.value)}
+          className="px-4 py-2 rounded-lg bg-primer text-white min-w-[200px]"
+        >
+          <option value="">Pilih Project</option>
+          {projects.map((proj) => (
+            <option key={proj.id} value={proj.id}>
+              {proj.projectName}
+            </option>
+          ))}
         </select>
-        <select className="px-4 py-2 rounded-lg border border-primer bg-transparent text-primer min-w-[200px] ">
-          <option value="002">Reza</option>
+
+        <select
+          value={selectedUser}
+          onChange={(e) => setSelectedUser(e.target.value)}
+          className="px-4 py-2 rounded-lg border border-primer bg-transparent text-primer min-w-[200px]"
+        >
+          <option value="">Pilih User</option>
+          {users.map((user) => (
+            <option key={user.userId} value={user.userId}>
+              {user.fullName}
+            </option>
+          ))}
         </select>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="bg-purple-50">
               <th className="px-4 py-3 text-left text-primer">Metrik</th>
-              <th className="px-4 py-3 text-left text-primer">Bobot </th>
+              <th className="px-4 py-3 text-left text-primer">Bobot</th>
               <th className="px-4 py-3 text-left text-primer">Target</th>
               <th className="px-4 py-3 text-left text-primer">Skor Aktual</th>
               <th className="px-4 py-3 text-left text-primer">Skor Akhir</th>
               <th className="px-4 py-3 text-left text-primer">Status</th>
             </tr>
           </thead>
-          {/* <tbody>
-            {data.map((row) => (
-              <tr key={row.id} className="border-b">
-                <td className="px-4 py-3">{row.id}</td>
-                <td className="px-4 py-3">{row.nama_divisi}</td>
-                <td className="px-4 py-3">{row.jumlah_anggota}</td>
-                <td className="px-4 py-3">{row.jumlah_anggota}</td>
-                <td className="px-4 py-3">{row.jumlah_anggota}</td>
-                <td className="px-4 py-3">
-                  <div className="flex space-x-4">
-                    <button className="p-1 hover:text-yellow-500">
-                      <Edit className="w-5 h-5 text-yellow-400" />
-                    </button>
-                    <button className="p-1 hover:text-red-600">
-                      <Trash2 className="w-5 h-5 text-red-500" />
-                    </button>
-                  </div>
+          <tbody>
+            {reportData.length > 0 ? (
+              reportData.map((row) => (
+                <tr key={row.metricId} className="border-b">
+                  <td className="px-4 py-3">{row.metricName}</td>
+                  <td className="px-4 py-3">{row.bobot}</td>
+                  <td className="px-4 py-3">{row.target}</td>
+                  <td className="px-4 py-3">{row.skorAktual}</td>
+                  <td className="px-4 py-3">{row.skorAkhir}</td>
+                  <td
+                    className={`px-4 py-3 ${
+                      row.status === "Achieved"
+                        ? "text-green-500 font-bold"
+                        : "text-red-500 font-bold"
+                    }`}
+                  >
+                    {row.status}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="6" className="text-center py-4 text-gray-500">
+                  {selectedUser && selectedProject
+                    ? "Tidak ada data KPI untuk user ini."
+                    : "Silakan pilih project dan user terlebih dahulu."}
                 </td>
               </tr>
-            ))}
-          </tbody> */}
+            )}
+          </tbody>
         </table>
       </div>
-
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-lg shadow-lg w-96">
-            <h2 className="text-xl font-semibold mb-4">Tambah Proyek</h2>
-            <form>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">
-                  Nama Proyek*
-                </label>
-                <input type="text" className="w-full border p-2 rounded-md" />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">Bobot*</label>
-                <select className="w-full border p-2 rounded-md">
-                  <option value="001"></option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">
-                  Deadline*
-                </label>
-                <input type="date" className="w-full border p-2 rounded-md" />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">PM*</label>
-                <select className="w-full border p-2 rounded-md">
-                  <option value="001"></option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">
-                  Anggota*
-                </label>
-                <select className="w-full border p-2 rounded-md">
-                  <option value="001"></option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">
-                  Status*
-                </label>
-                <select className="w-full border p-2 rounded-md">
-                  <option value="001"></option>
-                </select>
-              </div>
-              <div className="flex justify-end space-x-4">
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-lg bg-gray-300"
-                  onClick={handleModal}
-                >
-                  Batal
-                </button>
-                <button className="px-4 py-2 rounded-lg bg-primer text-white">
-                  Simpan
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

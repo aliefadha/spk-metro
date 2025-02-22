@@ -1,159 +1,96 @@
-import { useState } from "react";
-import { Edit, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import api from "@/utils/axios";
+import Swal from "sweetalert2";
 
 const KPIReportTableIndividual = () => {
-  const [showModal, setShowModal] = useState(false);
-  const handleModal = () => setShowModal(!showModal);
+  const [reportData, setReportData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // ✅ Fetch data KPI Report dari API
+  const fetchKPIReport = async () => {
+    try {
+      const response = await api.get(
+        "http://localhost:3000/api/v1/kpi-reports"
+      );
+      setReportData(response.data.data);
+    } catch (error) {
+      console.error("Gagal mengambil data KPI Report:", error);
+      setError("Gagal mengambil data");
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Memuat Data",
+        text: "Terjadi kesalahan saat mengambil data KPI Report.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchKPIReport();
+  }, []);
 
   return (
     <div className="bg-white rounded-lg p-6 mt-8">
-      <div className="flex flex-col sm:flex-row gap-2 mb-6 ">
-        <h2 className="text-xl font-semibold mr-3">Divisi Developer</h2>
-        <select className="px-4 py-2 rounded-lg bg-primer text-white min-w-[200px] ">
-          <option value="002">002 - E-Commerce Resong</option>
-        </select>
-        <select className="px-4 py-2 rounded-lg border border-primer bg-transparent text-primer min-w-[200px] ">
-          <option value="002">Reza</option>
-        </select>
+      <div className="flex flex-col sm:flex-row gap-2 mb-6">
+        <h2 className="text-xl font-semibold mr-3">Data KPI Report</h2>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-purple-50">
-              <th className="px-4 py-3 text-left text-primer">Metrik</th>
-              <th className="px-4 py-3 text-left text-primer">Bobot </th>
-              <th className="px-4 py-3 text-left text-primer">Target</th>
-              <th className="px-4 py-3 text-left text-primer">Skor Aktual</th>
-              <th className="px-4 py-3 text-left text-primer">Skor Akhir</th>
-              <th className="px-4 py-3 text-left text-primer">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-b">
-              <td className="px-4 py-3">Dummy</td>
-              <td className="px-4 py-3">Dummy</td>
-              <td className="px-4 py-3">Dummy</td>
-              <td className="px-4 py-3">Dummy</td>
-              <td className="px-4 py-3">Dummy</td>
-              <td className="px-4 py-3">
-                <div className="flex space-x-4">
-                  <button className="p-1 hover:text-yellow-500">
-                    <Edit className="w-5 h-5 text-yellow-400" />
-                  </button>
-                  <button className="p-1 hover:text-red-600">
-                    <Trash2 className="w-5 h-5 text-red-500" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <tr className="border-b">
-              <td className="px-4 py-3">Dummy</td>
-              <td className="px-4 py-3">Dummy</td>
-              <td className="px-4 py-3">Dummy</td>
-              <td className="px-4 py-3">Dummy</td>
-              <td className="px-4 py-3">Dummy</td>
-              <td className="px-4 py-3">
-                <div className="flex space-x-4">
-                  <button className="p-1 hover:text-yellow-500">
-                    <Edit className="w-5 h-5 text-yellow-400" />
-                  </button>
-                  <button className="p-1 hover:text-red-600">
-                    <Trash2 className="w-5 h-5 text-red-500" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <tr className="border-b">
-              <td className="px-4 py-3">Dummy</td>
-              <td className="px-4 py-3">Dummy</td>
-              <td className="px-4 py-3">Dummy</td>
-              <td className="px-4 py-3">Dummy</td>
-              <td className="px-4 py-3">Dummy</td>
-              <td className="px-4 py-3">
-                <div className="flex space-x-4">
-                  <button className="p-1 hover:text-yellow-500">
-                    <Edit className="w-5 h-5 text-yellow-400" />
-                  </button>
-                  <button className="p-1 hover:text-red-600">
-                    <Trash2 className="w-5 h-5 text-red-500" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        {loading ? (
+          <p className="text-center">Memuat data...</p>
+        ) : error ? (
+          <p className="text-center text-red-500">{error}</p>
+        ) : (
+          <table className="w-full">
+            <thead>
+              <tr className="bg-purple-50">
+                <th className="px-4 py-3 text-left text-primer">Nama Member</th>
+                {reportData.length > 0 &&
+                  reportData[0].metrics.map((_, index) => (
+                    <th key={index} className="px-4 py-3 text-left text-primer">
+                      Metrik {index + 1}
+                    </th>
+                  ))}
+                <th className="px-4 py-3 text-left text-primer">Skor</th>
+                <th className="px-4 py-3 text-left text-primer">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reportData.length > 0 ? (
+                reportData.map((row, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="px-4 py-3">{row.fullName}</td>
+                    {row.metrics.map((value, idx) => (
+                      <td key={idx} className="px-4 py-3">
+                        {value}
+                      </td>
+                    ))}
+                    <td className="px-4 py-3">{row.totalSkor}</td>
+                    <td
+                      className={`px-4 py-3 ${
+                        row.status === "Achieved"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {row.status}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="text-center py-4">
+                    Tidak ada data KPI Report.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
-
-      <div className="overflow-x-auto py-10 justify-content-center">
-        <button className="px-4 py-2 border border-primer rounded-lg bg-primer text-white">
-          Skor KPI Reza adalah 98.2 (Not Achieved)
-        </button>
-      </div>
-
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-lg shadow-lg w-96">
-            <h2 className="text-xl font-semibold mb-4">Tambah Proyek</h2>
-            <form>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">
-                  Nama Proyek*
-                </label>
-                <input type="text" className="w-full border p-2 rounded-md" />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">Bobot*</label>
-                <select className="w-full border p-2 rounded-md">
-                  <option value="001"></option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">
-                  Deadline*
-                </label>
-                <input type="date" className="w-full border p-2 rounded-md" />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">PM*</label>
-                <select className="w-full border p-2 rounded-md">
-                  <option value="001"></option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">
-                  Anggota*
-                </label>
-                <select className="w-full border p-2 rounded-md">
-                  <option value="001"></option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">
-                  Status*
-                </label>
-                <select className="w-full border p-2 rounded-md">
-                  <option value="001"></option>
-                </select>
-              </div>
-              <div className="flex justify-end space-x-4">
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-lg bg-gray-300"
-                  onClick={handleModal}
-                >
-                  Batal
-                </button>
-                <button className="px-4 py-2 rounded-lg bg-primer text-white">
-                  Simpan
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
