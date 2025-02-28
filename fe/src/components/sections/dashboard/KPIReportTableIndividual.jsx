@@ -6,6 +6,21 @@ const KPIReportTableIndividual = () => {
   const [reportData, setReportData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [kpiList, setKpiList] = useState([]);
+
+  // Fetch KPI Metrics
+  useEffect(() => {
+    const fetchKPI = async () => {
+      try {
+        const response = await api.get("http://localhost:3000/api/v1/metrics");
+        setKpiList(response.data.data);
+      } catch (error) {
+        console.error("Gagal memuat KPI:", error);
+      }
+    };
+
+    fetchKPI();
+  }, []);
 
   // ✅ Fetch data KPI Report dari API
   const fetchKPIReport = async () => {
@@ -44,16 +59,15 @@ const KPIReportTableIndividual = () => {
         ) : error ? (
           <p className="text-center text-red-500">{error}</p>
         ) : (
-          <table className="w-full">
+          <table className="w-full" style={{ fontSize: "12px" }}>
             <thead>
               <tr className="bg-purple-50">
                 <th className="px-4 py-3 text-left text-primer">Nama Member</th>
-                {reportData.length > 0 &&
-                  reportData[0].metrics.map((_, index) => (
-                    <th key={index} className="px-4 py-3 text-left text-primer">
-                      Metrik {index + 1}
-                    </th>
-                  ))}
+                {kpiList.map((kpi) => (
+                  <th key={kpi.id} className="px-4 py-3 text-left text-primer">
+                    {kpi.kpiName}
+                  </th>
+                ))}
                 <th className="px-4 py-3 text-left text-primer">Skor</th>
                 <th className="px-4 py-3 text-left text-primer">Status</th>
               </tr>
@@ -64,7 +78,11 @@ const KPIReportTableIndividual = () => {
                   <tr key={index} className="border-b">
                     <td className="px-4 py-3">{row.fullName}</td>
                     {row.metrics.map((value, idx) => (
-                      <td key={idx} className="px-4 py-3">
+                      <td
+                        key={idx}
+                        className="px-4 py-3"
+                        style={{ textAlign: "center" }}
+                      >
                         {value}
                       </td>
                     ))}
