@@ -68,8 +68,9 @@ const KPIReportTableIndividual = () => {
                     {kpi.kpiName}
                   </th>
                 ))}
-                <th className="px-4 py-3 text-left text-primer">Skor</th>
-                <th className="px-4 py-3 text-left text-primer">Status</th>
+                <th className="px-4 py-3 text-left text-primer">
+                  Average Skor
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -86,16 +87,7 @@ const KPIReportTableIndividual = () => {
                         {value}
                       </td>
                     ))}
-                    <td className="px-4 py-3">{row.totalSkor}</td>
-                    <td
-                      className={`px-4 py-3  ${
-                        row.status === "Achieved"
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {row.status}
-                    </td>
+                    <td className="text-center px-4 py-3">{row.totalSkor}</td>
                   </tr>
                 ))
               ) : (
