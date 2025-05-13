@@ -86,7 +86,7 @@ const KPIReportTable = () => {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full" style={{ fontSize: "12px" }}>
           <thead>
             <tr className="bg-purple-50">
               <th className="px-4 py-3 text-left text-primer">Metrik</th>
@@ -109,8 +109,8 @@ const KPIReportTable = () => {
                   <td
                     className={`px-4 py-3 ${
                       row.status === "Achieved"
-                        ? "text-green-500 font-bold"
-                        : "text-red-500 font-bold"
+                        ? "text-green-500"
+                        : "text-red-500"
                     }`}
                   >
                     {row.status}

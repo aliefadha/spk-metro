@@ -88,7 +88,7 @@ const KPIReportTableIndividual = () => {
                     ))}
                     <td className="px-4 py-3">{row.totalSkor}</td>
                     <td
-                      className={`px-4 py-3 ${
+                      className={`px-4 py-3  ${
                         row.status === "Achieved"
                           ? "text-green-600"
                           : "text-red-600"
