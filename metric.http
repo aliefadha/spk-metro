@@ -6,6 +6,10 @@ Content-Type: application/json
     "projectId": "37a5c643-dd9c-44f9-93a2-6aac6737c37d"
 }
 
+### 
+GET http://localhost:3000/api/v1/project/project-collaborators/37a5c643-dd9c-44f9-93a2-6aac6737c37d
+
 ###
 GET http://localhost:3000/api/v1/kpi-reports
 Content-Type: application/json
+

@@ -27,7 +27,7 @@ publicRoute.get("/api/v1/project/:id", projectController.getProjectById);
 publicRoute.post("/api/v1/project", projectController.createProject);
 publicRoute.put("/api/v1/project/:id", projectController.updateProject);
 publicRoute.delete("/api/v1/project/:id", projectController.deleteProject);
-publicRoute.get("/api/v1/project/project-collaborators/:id", projectController.getProjectCollaborators);
+publicRoute.get("/api/v1/project/project-collaborators/:projectId", projectController.getProjectCollaborators);
 
 
 //member

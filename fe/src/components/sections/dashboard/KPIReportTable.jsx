@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "@/utils/axios"; // Sesuaikan dengan path axios-mu
+import Card from "react-bootstrap/Card";
 
 const KPIReportTable = () => {
   const [selectedProject, setSelectedProject] = useState(""); // Simpan projectId
@@ -7,6 +8,7 @@ const KPIReportTable = () => {
   const [projects, setProjects] = useState([]); // Data project dropdown
   const [users, setUsers] = useState([]); // Data user dropdown
   const [reportData, setReportData] = useState([]); // Data KPI Report
+  const [totalSkor, setTotalSkor] = useState(null);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -45,7 +47,8 @@ const KPIReportTable = () => {
           "http://localhost:3000/api/v1/kpi-reports",
           { userId: selectedUser, projectId: selectedProject }
         );
-        setReportData(response.data.data);
+        setReportData(response.data.data.reportData);
+        setTotalSkor(response.data.data.totalSkor);
       } catch (error) {
         console.error("Gagal mengambil data KPI Report:", error);
       }
@@ -128,6 +131,23 @@ const KPIReportTable = () => {
             )}
           </tbody>
         </table>
+      </div>
+
+      <div>
+        <Card
+          style={{
+            backgroundColor: "#7E0EFF",
+            color: "white",
+            width: "68rem",
+            marginTop: "25px",
+            padding: "15px",
+            borderRadius: "10px",
+          }}
+        >
+          <Card.Body>
+            <h2>Skor KPI Total adalah : {totalSkor} </h2>
+          </Card.Body>
+        </Card>
       </div>
     </div>
   );

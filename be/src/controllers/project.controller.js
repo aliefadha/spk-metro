@@ -218,7 +218,7 @@ const projectController = {
             const { projectId } = req.params; // Ambil projectId dari URL
     
             const collaborators = await prisma.projectCollaborator.findMany({
-                where: { projectId },
+                where: { projectId,  isProjectManager: false },
                 include: { user: true }, // Ambil data user terkait
             });
     
