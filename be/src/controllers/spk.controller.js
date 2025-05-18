@@ -222,10 +222,15 @@ const spkController = {
                 };
             }).sort((a, b) => a.Qi - b.Qi);
 
+            const rankedResult = result.map((item, index) => ({
+                ...item,
+                rank: index + 1
+            }));
+            
             return res.status(200).json({
                 error: false,
                 message: 'Nilai VIKOR (Q) berhasil dihitung',
-                data: result
+                data: rankedResult
             });
 
         } catch (error) {
