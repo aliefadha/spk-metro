@@ -1,0 +1,11 @@
+### 1. Matriks Keputusan
+GET http://localhost:3000/api/decision-matrix
+
+### 2. Normalisasi Matriks
+GET http://localhost:3000/api/normalized-matrix
+
+### 3. Hitung Si dan Ri
+GET http://localhost:3000/api/si-ri
+
+### 4. Hitung Nilai Qi (VIKOR)
+GET http://localhost:3000/api/vikor-result

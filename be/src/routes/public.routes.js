@@ -8,6 +8,7 @@ const kpiController = require ("../controllers/kpi.controller.js")
 const assessmentController = require ("../controllers/assesment.controller.js")
 const dashboardController = require ("../controllers/dashboard.controller.js")
 const metricController = require ("../controllers/metric.controller.js")
+const spkController = require ("../controllers/spk.controller.js")
 
 publicRoute.post("/api/v1/login", userController.login);
 
@@ -53,6 +54,12 @@ publicRoute.delete("/api/v1/assessments/:id", assessmentController.deleteAssessm
 //metric
 publicRoute.post("/api/v1/kpi-reports", metricController.getKPIReportByUser);
 publicRoute.get("/api/v1/kpi-reports", metricController.getAllKPIReports);
+
+//spk 
+publicRoute.get('/api/decision-matrix', spkController.getDecisionMatrix);
+publicRoute.get('/api/normalized-matrix', spkController.getNormalizedMatrix);
+publicRoute.get('/api/si-ri', spkController.getSiRi);
+publicRoute.get('/api/vikor-result', spkController.getVikorResultByProject);
 
 
 
