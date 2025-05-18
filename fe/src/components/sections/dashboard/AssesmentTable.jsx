@@ -10,7 +10,6 @@ const AssesmentTable = () => {
   const [isEditing, setIsEditing] = useState(null);
   const [editValues, setEditValues] = useState({});
 
-  // Fetch KPI Metrics
   useEffect(() => {
     const fetchKPI = async () => {
       try {
@@ -24,7 +23,6 @@ const AssesmentTable = () => {
     fetchKPI();
   }, []);
 
-  // Fetch Assessments Data
   const fetchData = async () => {
     try {
       const response = await api.get(
@@ -32,12 +30,11 @@ const AssesmentTable = () => {
       );
       console.log("Response Data:", response.data);
 
-      // Mapping metrics ke object agar mudah digunakan
       const formattedData = response.data.data.map((item) => ({
         userId: item.userId,
         fullName: item.fullName,
         metrics: item.metrics.reduce((acc, metric) => {
-          acc[metric.metricId] = metric.value; // Simpan metric berdasarkan ID-nya
+          acc[metric.metricId] = metric.value;
           return acc;
         }, {}),
       }));
