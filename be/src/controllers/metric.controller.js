@@ -3,7 +3,6 @@ const prisma = require('../configs/database');
 const metricController = { 
    
   
-
     getKPIReportByUser : async (req, res) => {
         try {
             const { userId, projectId } = req.body; 
