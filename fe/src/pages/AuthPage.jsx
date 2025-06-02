@@ -12,6 +12,36 @@ const AuthPage = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   try {
+  //     const response = await api.post("/v1/login", {
+  //       email,
+  //       password,
+  //     });
+
+  //     Swal.fire({
+  //       icon: "success",
+  //       title: "Berhasil Masuk!",
+  //       text: "Anda akan diarahkan ke dashboard.",
+  //       timer: 2000,
+  //       showConfirmButton: false,
+  //     });
+  //     localStorage.setItem("token", "Bearer " + response.data.token);
+  //     localStorage.setItem("user", JSON.stringify(response.data.user));
+
+  //     navigate("/dashboard");
+  //   } catch (error) {
+  //     Swal.fire({
+  //       icon: "error",
+  //       title: "Gagal Masuk",
+  //       text:
+  //         error.response?.data?.message ||
+  //         "Terjadi kesalahan, periksa kembali email dan password Anda.",
+  //     });
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -20,16 +50,30 @@ const AuthPage = () => {
         password,
       });
 
+      const token = "Bearer " + response.data.data.token;
+      const user = response.data.data.user;
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
       Swal.fire({
         icon: "success",
         title: "Berhasil Masuk!",
-        text: "Anda akan diarahkan ke dashboard.",
+        text: "Anda akan diarahkan ke halaman utama.",
         timer: 2000,
         showConfirmButton: false,
       });
-      localStorage.setItem("token", "Bearer " + response.data.token);
-      navigate("/dashboard");
+
+      // Arahkan berdasarkan role
+      if (user.role === "SUPERADMIN") {
+        navigate("/dashboard");
+      } else if (user.role === "MEMBER") {
+        navigate("/userassesment");
+      } else {
+        navigate("/notfound");
+      }
     } catch (error) {
+      console.error("Login error:", error); // Debug log
       Swal.fire({
         icon: "error",
         title: "Gagal Masuk",
