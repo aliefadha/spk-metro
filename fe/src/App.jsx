@@ -18,6 +18,11 @@ import FinalResultPage from "./pages/FinalResultPage";
 import AccessPage from "./pages/AccessPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import PrivateRoute from "./pages/PrivateRoute";
+import UserAssesment from "./pages/UserAssesment";
+import UserKpiReportPage from "./pages/UserKpiReportPage";
+import UserKpiReportIndividual from "./pages/UserKpiReportIndividual";
+import UserSPKCalculation from "./pages/UserSPKCalculation";
+import UserFinalResult from "./pages/UserFinalResult";
 
 export default function App() {
   return (
@@ -123,6 +128,14 @@ export default function App() {
             }
           />
           <Route path="/*" element={<NotFoundPage />} />
+          <Route path="/userassesment" element={<UserAssesment />} />
+          <Route path="/userkpiproject" element={<UserKpiReportPage />} />
+          <Route
+            path="/userkpiindividual"
+            element={<UserKpiReportIndividual />}
+          />
+          <Route path="/userspk" element={<UserSPKCalculation />} />
+          <Route path="/userfinal" element={<UserFinalResult />} />
         </Routes>
       </Router>
     </>

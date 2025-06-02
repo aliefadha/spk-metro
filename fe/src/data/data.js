@@ -35,6 +35,23 @@ export const sidebarLinks = [
   { icon: LogOut, label: 'Keluar', path: '/logout' }
 ];
 
+export const sidebarLinksUser = [
+  
+  { icon: FileText, label: 'Assesment', path: '/userassesment' },
+  {
+    icon: Calculator,
+    label: 'KPI Reports',
+    path: '/userkpiproject',
+    subItems: [
+      { label: 'Project', path: '/userkpiproject' },
+      { label: 'Individual', path: '/userkpiindividual' }
+    ]
+  },
+  { icon: Calculator, label: 'SPK Calculation', path: '/userspk' },
+  { icon: Award, label: 'Final Result', path: '/userfinal' },
+  { icon: LogOut, label: 'Keluar', path: '/logout' }
+];
+
 export const dashboardStats = [
   { 
     title: 'Anggota', 
