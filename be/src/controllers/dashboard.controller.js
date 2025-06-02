@@ -33,6 +33,36 @@ const dashboardController = {
         }
     },
 
+    getUserData: async (req, res) => {
+        try {
+            const users = await prisma.user.findMany({
+                select: {
+                    fullName: true,
+                    email: true,
+                    role: true,
+                },
+            });
+
+            const formattedUsers = users.map(user => ({
+                fullName: user.fullName,
+                email: user.email,
+                level: user.role,
+            }));
+
+            res.status(200).json({
+                error: false,
+                message: 'User data retrieved successfully',
+                data: formattedUsers,
+            });
+        } catch (err) {
+            res.status(500).json({
+                error: true,
+                message: 'Gagal mengambil data user',
+                errorDetail: err.message,
+            });
+        }
+    },
+
 
 };
 

@@ -14,6 +14,7 @@ publicRoute.post("/api/v1/login", userController.login);
 
 //Dashboard 
 publicRoute.get("/api/v1/count", dashboardController.countData)
+publicRoute.get("/api/v1/user", dashboardController.getUserData)
 
 // Routes Division
 publicRoute.post("/api/v1/division", divisionController.createDivision);

@@ -27,8 +27,8 @@ const AuthPage = () => {
         timer: 2000,
         showConfirmButton: false,
       });
-      localStorage.setItem("token", "Bearer " + response.data.token); // <== simpan token ke localStorage
-      navigate("/dashboard"); // Navigate to Dashboard after success
+      localStorage.setItem("token", "Bearer " + response.data.token);
+      navigate("/dashboard");
     } catch (error) {
       Swal.fire({
         icon: "error",
