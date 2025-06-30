@@ -4,6 +4,7 @@ import WelcomeSection from "@/components/sections/dashboard/WelcomeSection";
 import StatCard from "@/components/sections/dashboard/StatCard";
 import { LayoutGrid, Users, ListTodo, Briefcase } from "lucide-react";
 import KPIReportTableIndividual from "@/components/sections/dashboard/KPIReportTableIndividual";
+import { getUser } from "@/utils/auth";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -13,6 +14,7 @@ export default function DashboardPage() {
   });
 
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState({ userName: "", role: "" });
 
   useEffect(() => {
     const fetchDashboardStats = async () => {
@@ -30,6 +32,15 @@ export default function DashboardPage() {
     };
 
     fetchDashboardStats();
+
+    // Ambil user dari localStorage
+    const loggedInUser = getUser();
+    if (loggedInUser) {
+      setUser({
+        userName: loggedInUser.fullName || loggedInUser.name || "User",
+        role: loggedInUser.role || "",
+      });
+    }
   }, []);
 
   const dashboardStats = [
@@ -63,7 +74,7 @@ export default function DashboardPage() {
         Dashboard
       </h1>
 
-      <WelcomeSection userName="Daffa (Manajer Operasional Metro Software)" />
+      <WelcomeSection userName={user.userName} role={user.role} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (

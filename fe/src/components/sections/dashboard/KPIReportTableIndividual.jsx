@@ -7,6 +7,8 @@ const KPIReportTableIndividual = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [kpiList, setKpiList] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState("");
 
   // Fetch KPI Metrics
   useEffect(() => {
@@ -22,12 +24,32 @@ const KPIReportTableIndividual = () => {
     fetchKPI();
   }, []);
 
-  // ✅ Fetch data KPI Report dari API
-  const fetchKPIReport = async () => {
+  // Fetch project list
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await api.get("http://localhost:3000/api/v1/projects");
+        setProjects(response.data.data);
+      } catch (error) {
+        console.error("Gagal memuat projects:", error);
+      }
+    };
+    fetchProjects();
+  }, []);
+
+  // Fetch data KPI Report dari API
+  const fetchKPIReport = async (projectId = "") => {
     try {
-      const response = await api.get(
-        "http://localhost:3000/api/v1/kpi-reports"
-      );
+      let response;
+      if (projectId) {
+        response = await api.get(
+          `http://localhost:3000/api/v1/kpi-reports?projectId=${projectId}`
+        );
+      } else {
+        response = await api.get(
+          "http://localhost:3000/api/v1/kpi-reports"
+        );
+      }
       setReportData(response.data.data);
     } catch (error) {
       console.error("Gagal mengambil data KPI Report:", error);
@@ -43,13 +65,27 @@ const KPIReportTableIndividual = () => {
   };
 
   useEffect(() => {
-    fetchKPIReport();
-  }, []);
+    setLoading(true);
+    fetchKPIReport(selectedProject);
+    // eslint-disable-next-line
+  }, [selectedProject]);
 
   return (
     <div className="bg-white rounded-lg p-6 mt-8">
-      <div className="flex flex-col sm:flex-row gap-2 mb-6">
-        <h2 className="text-xl font-semibold mr-3">Data KPI Report</h2>
+      <div className="flex flex-col sm:flex-row gap-2 mb-6 items-center">
+        <h2 className="text-xl font-semibold mr-3">Laporan KPI Proyek</h2>
+        <select
+          className="px-4 py-2 border border-primer rounded-lg bg-transparent text-primer min-w-[200px]"
+          value={selectedProject}
+          onChange={e => setSelectedProject(e.target.value)}
+        >
+          <option value="">Pilih Proyek</option>
+          {projects.map((project) => (
+            <option key={project.id} value={project.id}>
+              {project.projectName}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Table */}

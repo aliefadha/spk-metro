@@ -51,6 +51,7 @@ publicRoute.get("/api/v1/assessments", assessmentController.getAssessmentTable);
 publicRoute.get("/api/v1/assessments/user", assessmentController.getAssessmentsByUser);
 publicRoute.put("/api/v1/assessments", assessmentController.updateAssessment);
 publicRoute.delete("/api/v1/assessments/:id", assessmentController.deleteAssessment);
+publicRoute.get("/api/v1/assessments/project/:projectId", assessmentController.getAssessmentTable);
 
 //metric
 publicRoute.post("/api/v1/kpi-reports", metricController.getKPIReportByUser);

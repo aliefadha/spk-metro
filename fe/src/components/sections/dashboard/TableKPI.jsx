@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Edit, Trash2, Check, X } from "lucide-react";
 import api from "@/utils/axios";
 import Swal from "sweetalert2";
+import PropTypes from "prop-types";
 
-const TableKPI = () => {
+const TableKPI = ({ divisionId, divisionName }) => {
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(null);
   const [editValues, setEditValues] = useState({
@@ -23,7 +24,6 @@ const TableKPI = () => {
   const [target, settarget] = useState("");
   const [bobot, setBobot] = useState("");
   const [char, setChar] = useState("");
-  const [divisionId] = useState("e0b4374f-3403-4e5d-97af-398e0cec468d");
 
   const fetchData = async () => {
     try {
@@ -172,10 +172,13 @@ const TableKPI = () => {
     }
   };
 
+  // Filter data by divisionId if provided
+  const filteredData = divisionId ? data.filter((row) => row.divisionId === divisionId) : data;
+
   return (
     <div className="bg-white rounded-lg p-6 mt-8">
       <div className="flex flex-col sm:flex-row gap-2 mb-6 ">
-        <h2 className="text-xl font-semibold mr-3">Divisi Developer</h2>
+        <h2 className="text-xl font-semibold mr-3">Divisi {divisionName ? divisionName : "Semua Divisi"}</h2>
         <button
           onClick={handleModal}
           className="px-4 py-2 rounded-lg bg-primer text-white  ml-auto"
@@ -198,7 +201,7 @@ const TableKPI = () => {
             </tr>
           </thead>
           <tbody>
-            {data.map((row) => (
+            {filteredData.map((row) => (
               <tr key={row.id} className="border-b">
                 <td className="px-4 py-3">
                   {isEditing === row.id ? (
@@ -392,6 +395,10 @@ const TableKPI = () => {
       )}
     </div>
   );
+};
+
+TableKPI.propTypes = {
+  divisionId: PropTypes.string,
 };
 
 export default TableKPI;
