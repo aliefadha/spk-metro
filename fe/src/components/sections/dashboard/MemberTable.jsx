@@ -158,73 +158,74 @@ const MemberTable = () => {
             </tr>
           </thead>
           <tbody>
-            {data.map((row, index) => (
-              <tr key={row.id} className="border-b">
-                <td className="px-4 py-3">#00{index + 1}</td>
-                <td className="px-4 py-3">
-                  {isEditing === row.id ? (
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={editValues.fullName}
-                      onChange={handleChange}
-                      className="w-full border p-2 rounded-md"
-                      autoFocus
-                    />
-                  ) : (
-                    row.fullName
-                  )}
-                </td>
-
-                <td className="px-4 py-3">
-                  {isEditing === row.id ? (
-                    <select
-                      name="divisionId"
-                      value={editValues.divisionId}
-                      onChange={handleChange}
-                      className="w-full border p-2 rounded-md"
-                    >
-                      <option value="">{row.division}</option>
-                      {divisions.map((division) => (
-                        <option key={division.id} value={division.id}>
-                          {division.divisionName}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    row.division
-                  )}
-                </td>
-
-                <td className="px-4 py-3">
-                  <div className="flex space-x-4">
+            {data
+              .map((row, index) => (
+                <tr key={row.id} className="border-b">
+                  <td className="px-4 py-3">#00{index + 1}</td>
+                  <td className="px-4 py-3">
                     {isEditing === row.id ? (
-                      <button
-                        className="p-1 hover:text-green-500"
-                        onClick={() => handleSave(row.id)}
-                      >
-                        <Check className="w-5 h-5 text-green-500" />
-                      </button>
+                      <input
+                        type="text"
+                        name="fullName"
+                        value={editValues.fullName}
+                        onChange={handleChange}
+                        className="w-full border p-2 rounded-md"
+                        autoFocus
+                      />
                     ) : (
-                      <button
-                        className="p-1 hover:text-yellow-500"
-                        onClick={() =>
-                          handleEdit(row.id, row.fullName, row.divisionId)
-                        }
-                      >
-                        <Edit className="w-5 h-5 text-yellow-400" />
-                      </button>
+                      row.fullName
                     )}
-                    <button
-                      className="p-1 hover:text-red-600"
-                      onClick={() => handleDelete(row.id)}
-                    >
-                      <Trash2 className="w-5 h-5 text-red-500" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+
+                  <td className="px-4 py-3">
+                    {isEditing === row.id ? (
+                      <select
+                        name="divisionId"
+                        value={editValues.divisionId}
+                        onChange={handleChange}
+                        className="w-full border p-2 rounded-md"
+                      >
+                        <option value="">{row.division}</option>
+                        {divisions.map((division) => (
+                          <option key={division.id} value={division.id}>
+                            {division.divisionName}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      row.division
+                    )}
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <div className="flex space-x-4">
+                      {isEditing === row.id ? (
+                        <button
+                          className="p-1 hover:text-green-500"
+                          onClick={() => handleSave(row.id)}
+                        >
+                          <Check className="w-5 h-5 text-green-500" />
+                        </button>
+                      ) : (
+                        <button
+                          className="p-1 hover:text-yellow-500"
+                          onClick={() =>
+                            handleEdit(row.id, row.fullName, row.divisionId)
+                          }
+                        >
+                          <Edit className="w-5 h-5 text-yellow-400" />
+                        </button>
+                      )}
+                      <button
+                        className="p-1 hover:text-red-600"
+                        onClick={() => handleDelete(row.id)}
+                      >
+                        <Trash2 className="w-5 h-5 text-red-500" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>

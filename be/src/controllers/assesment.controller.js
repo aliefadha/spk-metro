@@ -113,7 +113,7 @@ const assessmentController = {
 
   updateAssessment: async (req, res) => {
     try {
-        const { userId, assessments } = req.body;
+        const { userId, assessments, projectId } = req.body;
 
         console.log("Incoming Update Request:", req.body);
 
@@ -126,19 +126,36 @@ const assessmentController = {
 
         // Cek apakah assessment ada sebelum update
         const existingAssessments = await prisma.assesment.findMany({
-            where: { userId }
+            where: projectId ? { userId, projectId } : { userId }
         });
         console.log("Existing Assessments:", existingAssessments);
 
         // Update setiap assessment berdasarkan userId + metricId
-        const updatePromises = assessments.map(async ({ metricId, value }) => {
-            const result = await prisma.assesment.updateMany({
-                where: { userId, metricId },
-                data: { value: parseInt(value, 10) },
-            });
-
-            console.log(`Updating metricId ${metricId} with value ${value}:`, result);
-            return result;
+        const updatePromises = assessments.map(async ({ metricId, value, assesmentDate }) => {
+            const whereClause = projectId ? { userId, metricId, projectId } : { userId, metricId };
+            // Check if the row exists
+            const existing = await prisma.assesment.findFirst({ where: whereClause });
+            if (existing) {
+                const result = await prisma.assesment.updateMany({
+                    where: whereClause,
+                    data: { value: parseInt(value, 10), assesmentDate },
+                });
+                console.log(`Updating metricId ${metricId} with value ${value} for projectId ${projectId}:`, result);
+                return result;
+            } else {
+                // Create new assessment if not exists
+                const result = await prisma.assesment.create({
+                    data: {
+                        userId,
+                        metricId,
+                        projectId,
+                        value: parseInt(value, 10),
+                        assesmentDate,
+                    },
+                });
+                console.log(`Created new assessment for metricId ${metricId} for projectId ${projectId}`);
+                return result;
+            }
         });
 
         await Promise.all(updatePromises);

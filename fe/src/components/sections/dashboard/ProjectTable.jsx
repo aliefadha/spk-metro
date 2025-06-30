@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Edit, Trash2, Check, X } from "lucide-react";
 import api from "@/utils/axios";
 import Swal from "sweetalert2";
-import Select from "react-select";
+import PropTypes from "prop-types";
 
-const ProjectTable = () => {
+const ProjectTable = ({ divisionId, divisionName }) => {
   const [showModal, setShowModal] = useState(false);
   const handleModal = () => setShowModal(!showModal);
   const [data, setData] = useState([]);
@@ -256,10 +256,13 @@ const ProjectTable = () => {
     }
   };
 
+  // Filter data by divisionId if provided
+  const filteredData = divisionId ? data.filter((row) => row.divisionId === divisionId) : data;
+
   return (
     <div className="bg-white rounded-lg p-6 mt-8">
       <div className="flex flex-col sm:flex-row gap-2 mb-6 ">
-        <h2 className="text-xl font-semibold mr-3">Divisi Developer</h2>
+        <h2 className="text-xl font-semibold mr-3">{divisionName ? `Divisi ${divisionName}` : "Semua Divisi"}</h2>
         <button
           onClick={handleModal}
           className="px-4 py-2 rounded-lg bg-primer text-white ml-auto"
@@ -282,7 +285,7 @@ const ProjectTable = () => {
             </tr>
           </thead>
           <tbody>
-            {data.map((row) => (
+            {filteredData.map((row) => (
               <tr key={row.id} className="border-b">
                 {/* Nama Proyek */}
                 <td className="px-4 py-3">
@@ -549,6 +552,11 @@ const ProjectTable = () => {
       )}
     </div>
   );
+};
+
+ProjectTable.propTypes = {
+  divisionId: PropTypes.string,
+  divisionName: PropTypes.string,
 };
 
 export default ProjectTable;
