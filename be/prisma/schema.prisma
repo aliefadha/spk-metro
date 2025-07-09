@@ -16,7 +16,7 @@ model user {
   projectCollaborator projectCollaborator[]
   divisionId          String?
   token               token[]
-  division            division?              @relation(fields: [divisionId], references: [id])
+  division            division?             @relation(fields: [divisionId], references: [id])
   created_at          DateTime              @default(now())
   updated_at          DateTime              @updatedAt
 }
@@ -55,16 +55,17 @@ model project {
 }
 
 model metric {
-  id         String      @id @default(uuid())
-  kodeKpi    String      @unique
-  kpiName    String
-  target     Float
-  bobot      Float
-  char       Karakteristik
-  divisionId String       
-  asessment  assesment[]
-  created_at DateTime    @default(now())
-  updated_at DateTime    @updatedAt
+  id              String            @id @default(uuid())
+  kodeKpi         String            @unique
+  kpiName         String
+  target          Float
+  bobot           Float
+  char            Karakteristik
+  divisionId      String
+  assesmentNonDev assesmentNonDev[]
+  asessment       assesment[]
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
 }
 
 model assesment {
@@ -83,35 +84,55 @@ model assesment {
   updated_at          DateTime              @updatedAt
 }
 
+model assesmentNonDev {
+  id                  String                @id @default(uuid())
+  metricId            String
+  userId              String
+  value               Int
+  assesmentDate       String
+  metric              metric                @relation(fields: [metricId], references: [id])
+  assesmentResult     assesmentResult[]
+  metricNormalization metricNormalization[]
+  metricResult        metricResult[]
+  created_at          DateTime              @default(now())
+  updated_at          DateTime              @updatedAt
+}
+
 model metricResult {
-  id               String     @id @default(uuid())
-  totalUtility     Float
-  vikorIndex       Float
-  maximumDeviation Float
-  assesment        assesment? @relation(fields: [assesmentId], references: [id])
-  assesmentId      String?
-  created_at       DateTime   @default(now())
-  updated_at       DateTime   @updatedAt
+  id                String           @id @default(uuid())
+  totalUtility      Float
+  vikorIndex        Float
+  maximumDeviation  Float
+  assesment         assesment?       @relation(fields: [assesmentId], references: [id])
+  assesmentId       String?
+  assesmentNonDev   assesmentNonDev? @relation(fields: [assesmentNonDevId], references: [id])
+  assesmentNonDevId String?
+  created_at        DateTime         @default(now())
+  updated_at        DateTime         @updatedAt
 }
 
 model metricNormalization {
-  id          String     @id @default(uuid())
-  value       Float
-  assesment   assesment? @relation(fields: [assesmentId], references: [id])
-  assesmentId String?
-  created_at  DateTime   @default(now())
-  updated_at  DateTime   @updatedAt
+  id                String           @id @default(uuid())
+  value             Float
+  assesment         assesment?       @relation(fields: [assesmentId], references: [id])
+  assesmentId       String?
+  assesmentNonDev   assesmentNonDev? @relation(fields: [assesmentNonDevId], references: [id])
+  assesmentNonDevId String?
+  created_at        DateTime         @default(now())
+  updated_at        DateTime         @updatedAt
 }
 
 model assesmentResult {
-  id          String          @id @default(uuid())
-  skor        Float
-  status      StatusAssesment
-  isPersonal  Boolean
-  assesment   assesment?      @relation(fields: [assesmentId], references: [id])
-  assesmentId String?
-  created_at  DateTime        @default(now())
-  updated_at  DateTime        @updatedAt
+  id                String           @id @default(uuid())
+  skor              Float
+  status            StatusAssesment
+  isPersonal        Boolean
+  assesment         assesment?       @relation(fields: [assesmentId], references: [id])
+  assesmentId       String?
+  assesmentNonDev   assesmentNonDev? @relation(fields: [assesmentNonDevId], references: [id])
+  assesmentNonDevId String?
+  created_at        DateTime         @default(now())
+  updated_at        DateTime         @updatedAt
 }
 
 enum StatusAssesment {
@@ -128,7 +149,7 @@ enum StatusProject {
 model division {
   id           String @id @default(uuid())
   divisionName String @unique
-  totalMember  Int @default(0) 
+  totalMember  Int    @default(0)
   user         user[]
 }
 
@@ -139,6 +160,6 @@ enum Role {
 }
 
 enum Karakteristik {
-  Cost 
+  Cost
   Benefit
 }

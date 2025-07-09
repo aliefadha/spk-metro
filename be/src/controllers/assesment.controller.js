@@ -215,9 +215,13 @@ getAssessmentTable: async (req, res) => {
               };
           });
 
+          // Find the first assessment for this user to get the date
+          const userAssessment = assessments.find(a => a.userId === userId);
+
           return {
               userId,
               fullName: userFullName,
+              assesmentDate: userAssessment ? userAssessment.assesmentDate : null,
               metrics: metricValues, // Sekarang sudah ada metricId!
           };
       });

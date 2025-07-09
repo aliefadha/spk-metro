@@ -17,7 +17,7 @@ export default function KpiReportPageIndividual() {
           Export
         </button>
       </div>
-      <KPIReportTableIndividual />
+      <KPIReportTableIndividual selectedDivision="" selectedMonth="" />
     </MainLayoutUser>
   );
 }

@@ -63,7 +63,7 @@ const metricController = {
                     target: metric.target,
                     skorAktual: actual,
                     skorAkhir: `${skorAkhir.toFixed(2)}`,
-                    status: skorAkhir >= 100 ? "Achieved" : "Not Achieved",
+                    status: actual >= target ? "Achieved" : "Not Achieved",
                 };
             }).filter(item => item !== null);
     

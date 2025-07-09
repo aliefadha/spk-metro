@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import api from "@/utils/axios"; // Sesuaikan dengan path axios-mu
+import api from "@/utils/axios";
 import Card from "react-bootstrap/Card";
 
 const KPIReportTable = () => {
@@ -133,24 +133,27 @@ const KPIReportTable = () => {
         </table>
       </div>
 
-      <div>
-        <Card
-          style={{
-            backgroundColor: "#7E0EFF",
-            color: "white",
-            width: "68rem",
-            marginTop: "25px",
-            padding: "15px",
-            borderRadius: "10px",
-          }}
-        >
-          <Card.Body>
-            <h2>Skor KPI Total adalah : {totalSkor} </h2>
-          </Card.Body>
-        </Card>
-      </div>
+      {totalSkor !== null && (
+        <div className="mt-6">
+          <Card
+            className="bg-primer text-white p-4 rounded-lg"
+            style={{
+              backgroundColor: "#7E0EFF",
+              color: "white",
+              borderRadius: "10px",
+            }}
+          >
+            <Card.Body>
+              <h2 className="text-lg font-semibold">
+                Skor KPI Total adalah : {totalSkor} ({reportData.every(row => row.status === "Achieved") ? "Achieved" : "Not Achieved"})
+              </h2>
+            </Card.Body>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
+
 
 export default KPIReportTable;

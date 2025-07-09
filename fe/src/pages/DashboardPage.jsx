@@ -85,7 +85,7 @@ export default function DashboardPage() {
           ))
         )}
       </div>
-      <KPIReportTableIndividual />
+      <KPIReportTableIndividual selectedDivision="" selectedMonth="" />
     </MainLayout>
   );
 }

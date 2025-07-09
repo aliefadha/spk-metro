@@ -6,11 +6,32 @@ const projectController = {
     // Get all projects
     getAllProjects: async (req, res) => {
         try {
+            const { month } = req.query;
+
+            let whereClause = {};
+
+            if (month) {
+                // Parse the month (format: "2025-10")
+                const [year, monthNum] = month.split('-');
+
+                // Format dates as strings (YYYY-MM-DD format)
+                const startDate = `${year}-${monthNum.padStart(2, '0')}-01`;
+                const endDate = `${year}-${(parseInt(monthNum) + 1).toString().padStart(2, '0')}-01`;
+
+                whereClause = {
+                    deadline: {
+                        gte: startDate,
+                        lt: endDate
+                    }
+                };
+            }
+
             const projects = await prisma.project.findMany({
+                where: whereClause,
                 include: {
                     projectCollaborator: {
-                        include : {
-                            user : true,
+                        include: {
+                            user: true,
                         }
                     },
                     asessment: true,
@@ -67,9 +88,9 @@ const projectController = {
     createProject: async (req, res) => {
         try {
             const { projectName, bobot, deadline, status, projectCollaborator } = req.body;
-    
+
             console.log("REQ.BODY:", JSON.stringify(req.body, null, 2));
-    
+
             const newProject = await prisma.project.create({
                 data: {
                     projectName,
@@ -84,20 +105,20 @@ const projectController = {
                     },
                 },
             });
-    
+
             console.log("NEW PROJECT:", JSON.stringify(newProject, null, 2));
-    
+
             const projectWithCollaborators = await prisma.project.findUnique({
                 where: { id: newProject.id },
                 include: { projectCollaborator: { include: { user: true } } },
             });
-    
+
             console.log("PROJECT WITH COLLABORATORS:", JSON.stringify(projectWithCollaborators, null, 2));
-    
+
             const nonManagers = projectWithCollaborators.projectCollaborator.filter(collab => !collab.isProjectManager);
-    
+
             console.log("NON-MANAGERS:", JSON.stringify(nonManagers, null, 2));
-            
+
             const metrics = await prisma.metric.findMany();
             if (metrics.length === 0) {
                 return res.status(400).json({
@@ -105,7 +126,7 @@ const projectController = {
                     message: "Tidak ada metric yang tersedia!",
                 });
             }
-    
+
             console.log("METRICS:", JSON.stringify(metrics, null, 2));
             const assessmentsData = nonManagers.flatMap(collaborator => {
                 return metrics.map(metric => ({
@@ -116,22 +137,22 @@ const projectController = {
                     assesmentDate: new Date().toISOString().split("T")[0],
                 }));
             });
-    
+
             console.log("ASSESSMENTS DATA:", JSON.stringify(assessmentsData, null, 2));
-    
+
             if (assessmentsData.length > 0) {
                 await prisma.assesment.createMany({
                     data: assessmentsData,
                     skipDuplicates: true,
                 });
             }
-    
+
             res.status(201).json({
                 error: false,
                 message: "Project dan assessment berhasil dibuat",
                 data: newProject,
             });
-    
+
         } catch (err) {
             console.error("Error creating project:", err);
             res.status(500).json({
@@ -141,7 +162,7 @@ const projectController = {
             });
         }
     },
-    
+
     // Update a project
     updateProject: async (req, res) => {
         try {
@@ -180,26 +201,26 @@ const projectController = {
     deleteProject: async (req, res) => {
         try {
             const { id } = req.params;
-    
+
             const project = await prisma.project.findUnique({
                 where: { id },
             });
-    
+
             if (!project) {
                 return res.status(404).json({
                     error: true,
                     message: 'Project not found',
                 });
             }
-    
+
             await prisma.projectCollaborator.deleteMany({
                 where: { projectId: id },
             });
-    
+
             await prisma.project.delete({
                 where: { id },
             });
-    
+
             res.status(200).json({
                 error: false,
                 message: 'Project deleted successfully',
@@ -213,28 +234,89 @@ const projectController = {
         }
     },
 
-    getProjectCollaborators : async (req, res) => {
+    getDoneProjectsInMonth: async (req, res) => {
+        try {
+            const { month } = req.query;
+            if (!month) {
+                return res.status(400).json({
+                    error: true,
+                    message: 'Month parameter is required (format: + YYYY - MM)',
+                });
+            }
+
+            // Parse the month (format: "2025-10")
+            const [year, monthNum] = month.split('-');
+
+            if (!year || !monthNum) {
+                return res.status(400).json({
+                    error: true,
+                    message: 'Invalid month format. Use YYYY-MM format',
+                });
+            }
+
+            // Format dates as strings (YYYY-MM-DD format)
+            const startDate = `${year}-${monthNum.padStart(2,
+                '0')}-01`;
+            const endDate = `${year}-${(parseInt(monthNum) +
+                1).toString().padStart(2, '0')}-01`;
+
+            const projects = await prisma.project.findMany({
+                where: {
+                    status: 'DONE',
+                    deadline: {
+                        gte: startDate,
+                        lt: endDate
+                    }
+                },
+                include: {
+                    projectCollaborator: {
+                        include: {
+                            user: true,
+                        }
+                    },
+                    asessment: true,
+                },
+                orderBy: {
+                    deadline: 'desc'
+                }
+            });
+
+            res.status(200).json({
+                error: false,
+                message: 'Done projects retrieved successfully',
+                data: projects,
+            });
+        } catch (err) {
+            res.status(500).json({
+                error: true,
+                message: 'Error retrieving done projects',
+                errorDetail: err.message,
+            });
+        }
+    },
+
+    getProjectCollaborators: async (req, res) => {
         try {
             const { projectId } = req.params; // Ambil projectId dari URL
-    
+
             const collaborators = await prisma.projectCollaborator.findMany({
-                where: { projectId,  isProjectManager: false },
+                where: { projectId, isProjectManager: false },
                 include: { user: true }, // Ambil data user terkait
             });
-    
+
             if (!collaborators.length) {
                 return res.status(404).json({
                     error: true,
                     message: "Tidak ada anggota untuk project ini",
                 });
             }
-    
+
             // Format data agar hanya mengirim userId & fullName
             const result = collaborators.map((col) => ({
                 userId: col.userId,
                 fullName: col.user.fullName,
             }));
-    
+
             res.status(200).json({
                 error: false,
                 message: "Data anggota proyek berhasil diambil",
@@ -250,8 +332,8 @@ const projectController = {
         }
     },
 
-    
-    
+
+
 };
 
 module.exports = projectController;

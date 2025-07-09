@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
-import { Edit, Check, X } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Edit, Check, X, FileText } from "lucide-react";
 import api from "@/utils/axios";
 import Swal from "sweetalert2";
 // PropTypes import removed: prop validation not used
 
-const AssesmentTable = ({ selectedDivision, divisionName }) => {
+const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
   const [assessments, setAssessments] = useState([]);
   const [kpiList, setKpiList] = useState([]);
   const [isEditing, setIsEditing] = useState(null);
@@ -13,31 +13,55 @@ const AssesmentTable = ({ selectedDivision, divisionName }) => {
   const [selectedProject, setSelectedProject] = useState("");
   const [collaborators, setCollaborators] = useState([]);
 
+  // Fetch projects only if divisionName is Developer - filter only DONE projects
   useEffect(() => {
+    if (divisionName !== "Developer") return;
     const fetchProjects = async () => {
       try {
-        const response = await api.get("http://localhost:3000/api/v1/projects");
-        setProjects(response.data.data || []);
+        let url = "http://localhost:3000/api/v1/projects";
+        
+        // If selectedMonth is provided, use the new done projects endpoint
+        if (selectedMonth) {
+          url = `http://localhost:3000/api/v1/projects/done?month=${selectedMonth}`;
+          const response = await api.get(url);
+          setProjects(response.data.data || []);
+        } else {
+          // Fallback to original endpoint and filter client-side
+          const response = await api.get(url);
+          const doneProjects = (response.data.data || []).filter(project => project.status === "DONE");
+          setProjects(doneProjects);
+        }
       } catch (error) {
         console.error("Gagal memuat projects:", error);
+        setProjects([]);
       }
     };
     fetchProjects();
-  }, []);
+  }, [divisionName, selectedMonth]);
 
   useEffect(() => {
     const fetchKPI = async () => {
       try {
-        const response = await api.get("http://localhost:3000/api/v1/metrics");
+        let url = "http://localhost:3000/api/v1/metrics";
+        
+        // If a division is selected, fetch KPIs specific to that division
+        if (selectedDivision && divisionName) {
+          url = `http://localhost:3000/api/v1/metrics/division?divisionId=${selectedDivision}`;
+        }
+        
+        const response = await api.get(url);
         setKpiList(response.data.data);
       } catch (error) {
         console.error("Gagal memuat KPI:", error);
+        setKpiList([]); // Set empty array on error
       }
     };
     fetchKPI();
-  }, []);
+  }, [selectedDivision, divisionName]);
 
+  // Fetch collaborators only if divisionName is Developer
   useEffect(() => {
+    if (divisionName !== "Developer") return;
     const fetchCollaborators = async () => {
       if (!selectedProject) {
         setCollaborators([]);
@@ -46,37 +70,82 @@ const AssesmentTable = ({ selectedDivision, divisionName }) => {
       try {
         const response = await api.get(`http://localhost:3000/api/v1/project/project-collaborators/${selectedProject}`);
         setCollaborators(response.data.data || []);
-      } catch {
+      } catch (error) {
+        console.error("Error fetching collaborators:", error);
         setCollaborators([]);
       }
     };
     fetchCollaborators();
-  }, [selectedProject]);
+  }, [selectedProject, divisionName]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
-      let url = "http://localhost:3000/api/v1/assessments";
-      if (selectedProject) {
+      let url;
+      if (divisionName === "Developer") {
+        if (!selectedProject) {
+          return;
+        }
         url = `http://localhost:3000/api/v1/assessments/project/${selectedProject}`;
+        const response = await api.get(url);
+
+        let formattedData = response.data.data.map((item) => ({
+          userId: item.userId,
+          fullName: item.fullName,
+          assesmentDate: item.assesmentDate,
+          metrics: Array.isArray(item.metrics)
+            ? item.metrics.reduce((acc, metric) => {
+                acc[metric.metricId] = metric.value;
+                return acc;
+              }, {})
+            : item.metrics,
+        }));
+
+        // Apply client-side month filtering if selectedMonth is provided
+        if (selectedMonth) {
+          formattedData = formattedData.filter((item) => {
+            if (!item.assesmentDate) return false;
+            
+            try {
+              const itemDate = new Date(item.assesmentDate);
+              const selectedDate = new Date(selectedMonth + '-01');
+              
+              return itemDate.getFullYear() === selectedDate.getFullYear() &&
+                     itemDate.getMonth() === selectedDate.getMonth();
+            } catch (error) {
+              console.error("Error parsing date:", item.assesmentDate, error);
+              return false;
+            }
+          });
+        }
+
+        setAssessments(formattedData);
+      } else {
+        url = `http://localhost:3000/api/v1/assessments-nondev/division/${divisionName}`;
+        
+        // Add month query parameter if selectedMonth is provided
+        if (selectedMonth) {
+          url += `?month=${selectedMonth}`;
+        }
+        
+        const response = await api.get(url);
+
+        let formattedData = response.data.data.map((item) => ({
+          userId: item.userId,
+          fullName: item.fullName,
+          assesmentDate: item.assesmentDate,
+          created_at: item.created_at,
+          metrics: Array.isArray(item.metrics)
+            ? item.metrics.reduce((acc, metric) => {
+                acc[metric.metricId] = metric.value;
+                return acc;
+              }, {})
+            : item.metrics,
+        }));
+
+        setAssessments(formattedData);
       }
-      const response = await api.get(url);
-      console.log("Response Data:", response.data);
-
-      const formattedData = response.data.data.map((item) => ({
-        userId: item.userId,
-        fullName: item.fullName,
-        metrics: Array.isArray(item.metrics)
-          ? item.metrics.reduce((acc, metric) => {
-              acc[metric.metricId] = metric.value;
-              return acc;
-            }, {})
-          : item.metrics,
-      }));
-
-      console.log("Formatted Data for State:", formattedData);
-      setAssessments(formattedData);
     } catch (error) {
-      console.error("Gagal memuat data assessment:", error);
+      console.error("Gagal memuat data assessment atau anggota:", error);
       Swal.fire({
         icon: "error",
         title: "Gagal Memuat Data",
@@ -85,11 +154,16 @@ const AssesmentTable = ({ selectedDivision, divisionName }) => {
           "Terjadi kesalahan saat memuat data.",
       });
     }
-  };
+  }, [selectedProject, divisionName, selectedMonth]);
 
   useEffect(() => {
-    fetchData();
-  }, [selectedProject]);
+    if (divisionName === "Developer") {
+      fetchData();
+    } else if (divisionName) {
+      // Only fetch if divisionName is set (not empty)
+      fetchData();
+    }
+  }, [selectedProject, divisionName, selectedMonth, fetchData]);
 
   // Fungsi untuk masuk ke mode edit
   const handleEdit = (userId, metrics) => {
@@ -113,14 +187,17 @@ const AssesmentTable = ({ selectedDivision, divisionName }) => {
         assessments: Object.entries(editValues).map(([metricId, value]) => ({
           metricId,
           value: parseInt(value, 10) || 0, // Pastikan angka
-          assesmentDate: new Date().toISOString().split('T')[0],
+          assesmentDate: selectedMonth ? `${selectedMonth}-01` : new Date().toISOString().split('T')[0],
         })),
-        ...(selectedProject ? { projectId: selectedProject } : {}),
+        ...(divisionName === "Developer" && selectedProject ? { projectId: selectedProject } : {}),
       };
 
-      console.log('Update assessment payload:', updateData);
+      const url =
+        divisionName === "Developer"
+          ? "http://localhost:3000/api/v1/assessments"
+          : "http://localhost:3000/api/v1/assessments-nondev";
 
-      await api.put("http://localhost:3000/api/v1/assessments", updateData);
+      await api.put(url, updateData);
 
       Swal.fire({
         icon: "success",
@@ -149,27 +226,50 @@ const AssesmentTable = ({ selectedDivision, divisionName }) => {
     setEditValues({});
   };
 
-  // Filter assessments by selectedDivision if provided
-  const filteredAssessments = selectedDivision
-    ? assessments.filter((item) => item.divisionId === selectedDivision)
-    : assessments;
+  let filteredAssessments = assessments;
+  
+  if (divisionName === "Developer" && selectedProject && collaborators.length > 0) {
+    const collaboratorIds = collaborators.map((c) => c.userId);
+    filteredAssessments = filteredAssessments.filter((item) =>
+      collaboratorIds.includes(item.userId)
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg p-6 mt-8">
       <div className="flex flex-col sm:flex-row gap-2 mb-6 items-center">
-        <h2 className="text-xl font-semibold mr-5">{divisionName ? `Divisi ${divisionName}` : "Semua Divisi"}</h2>
-        <select
-          className="px-4 py-2 border border-primer rounded-lg bg-transparent text-primer"
-          value={selectedProject}
-          onChange={e => setSelectedProject(e.target.value)}
-        >
-          <option value="">Filter berdasarkan proyek</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.projectName}
-              </option>
-            ))}
-        </select>
+        <h2 className="text-xl font-semibold mr-5">
+          {divisionName ? `Divisi ${divisionName}` : "Semua Divisi"}
+          {selectedMonth && (
+            <span className="text-sm font-normal text-gray-600 ml-2">
+              - {new Date(selectedMonth + '-01').toLocaleDateString('id-ID', { year: 'numeric', month: 'long' })}
+            </span>
+          )}
+        </h2>
+        {divisionName === "Developer" && (
+          <div className="flex flex-col">
+            <select
+              className="px-4 py-2 border border-primer rounded-lg bg-transparent text-primer"
+              value={selectedProject}
+              onChange={e => setSelectedProject(e.target.value)}
+            >
+              <option value="">Filter berdasarkan proyek</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.projectName}
+                </option>
+              ))}
+            </select>
+            {projects.length === 0 && (
+              <p className="text-xs text-gray-500 mt-1">
+                {selectedMonth 
+                  ? `Tidak ada proyek DONE pada ${new Date(selectedMonth + '-01').toLocaleDateString('id-ID', { year: 'numeric', month: 'long' })}`
+                  : "Tidak ada proyek dengan status DONE"
+                }
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="overflow-x-auto">
@@ -186,57 +286,90 @@ const AssesmentTable = ({ selectedDivision, divisionName }) => {
             </tr>
           </thead>
           <tbody>
-            {filteredAssessments.map((item) => (
-              <tr key={item.userId} className="border-b">
-                <td className="px-4 py-3">{item.fullName}</td>
-                {kpiList.map((kpi) => (
-                  <td key={kpi.id} className="px-4 py-3 text-center ">
-                    {isEditing === item.userId ? (
-                      <input
-                        type="number"
-                        value={editValues[kpi.id] || ""}
-                        onChange={(e) =>
-                          handleEditChange(kpi.id, e.target.value)
-                        }
-                        className="w-full border p-1 rounded"
-                      />
-                    ) : item.metrics[kpi.id] !== undefined ? (
-                      item.metrics[kpi.id]
-                    ) : (
-                      "-"
-                    )}
-                  </td>
-                ))}
-
-                <td className="px-4 py-3">
-                  <div className="flex space-x-4">
-                    {isEditing === item.userId ? (
-                      <>
-                        <button
-                          onClick={() => handleUpdate(item.userId)}
-                          className="p-1 hover:text-green-500"
-                        >
-                          <Check className="w-5 h-5 text-green-500" />
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="p-1 hover:text-red-600"
-                        >
-                          <X className="w-5 h-5 text-red-500" />
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => handleEdit(item.userId, item.metrics)}
-                        className="p-1 hover:text-yellow-500"
-                      >
-                        <Edit className="w-5 h-5 text-yellow-400" />
-                      </button>
+            {!selectedDivision ? (
+              <tr>
+                <td colSpan={kpiList.length + 2} className="text-center py-8 text-gray-500">
+                  <div className="flex flex-col items-center gap-2">
+                    <FileText className="w-12 h-12 text-gray-300" />
+                    <p>Silakan pilih divisi terlebih dahulu untuk melihat assessment</p>
+                  </div>
+                </td>
+              </tr>
+            ) : kpiList.length === 0 ? (
+              <tr>
+                <td colSpan="3" className="text-center py-8 text-gray-500">
+                  <div className="flex flex-col items-center gap-2">
+                    <FileText className="w-12 h-12 text-gray-300" />
+                    <p>Tidak ada KPI untuk divisi {divisionName}</p>
+                    <p className="text-sm">Silakan tambahkan KPI untuk divisi ini terlebih dahulu</p>
+                  </div>
+                </td>
+              </tr>
+            ) : filteredAssessments.length === 0 ? (
+              <tr>
+                <td colSpan={kpiList.length + 2} className="text-center py-8 text-gray-500">
+                  <div className="flex flex-col items-center gap-2">
+                    <FileText className="w-12 h-12 text-gray-300" />
+                    <p>Tidak ada data assessment untuk {divisionName}</p>
+                    {divisionName === "Developer" && !selectedProject && (
+                      <p className="text-sm">Silakan pilih project terlebih dahulu</p>
                     )}
                   </div>
                 </td>
               </tr>
-            ))}
+            ) : (
+              filteredAssessments.map((item) => (
+                <tr key={item.userId} className="border-b">
+                  <td className="px-4 py-3">{item.fullName}</td>
+                  {kpiList.map((kpi) => (
+                    <td key={kpi.id} className="px-4 py-3 text-center ">
+                      {isEditing === item.userId ? (
+                        <input
+                          type="number"
+                          value={editValues[kpi.id] || ""}
+                          onChange={(e) =>
+                            handleEditChange(kpi.id, e.target.value)
+                          }
+                          className="w-full border p-1 rounded"
+                        />
+                      ) : item.metrics[kpi.id] !== undefined ? (
+                        item.metrics[kpi.id]
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                  ))}
+
+                  <td className="px-4 py-3">
+                    <div className="flex space-x-4">
+                      {isEditing === item.userId ? (
+                        <>
+                          <button
+                            onClick={() => handleUpdate(item.userId)}
+                            className="p-1 hover:text-green-500"
+                          >
+                            <Check className="w-5 h-5 text-green-500" />
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="p-1 hover:text-red-600"
+                          >
+                            <X className="w-5 h-5 text-red-500" />
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => handleEdit(item.userId, item.metrics)}
+                          className="p-1 hover:text-yellow-500"
+                        >
+                          <Edit className="w-5 h-5 text-yellow-400" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

@@ -4,7 +4,7 @@ import api from "@/utils/axios";
 import Swal from "sweetalert2";
 import PropTypes from "prop-types";
 
-const ProjectTable = ({ divisionId, divisionName }) => {
+const ProjectTable = ({ selectedMonth }) => {
   const [showModal, setShowModal] = useState(false);
   const handleModal = () => setShowModal(!showModal);
   const [data, setData] = useState([]);
@@ -34,7 +34,13 @@ const ProjectTable = ({ divisionId, divisionName }) => {
 
   const fetchData = async () => {
     try {
-      const response = await api.get("http://localhost:3000/api/v1/projects");
+      let url = "/v1/projects";
+      
+      if (selectedMonth) {
+        url += `?month=${selectedMonth}`;
+      }
+
+      const response = await api.get(url);
 
       const transformedData = response.data.data.map((project) => {
         const pm =
@@ -56,26 +62,20 @@ const ProjectTable = ({ divisionId, divisionName }) => {
       setData(transformedData);
     } catch (error) {
       console.error("Gagal memuat data:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Gagal Memuat Data",
-        text:
-          error.response?.data?.message ||
-          "Terjadi kesalahan saat memuat data.",
-      });
+      // Don't show error alert, just set empty data
+      setData([]);
     }
   };
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [selectedMonth]);
 
   useEffect(() => {
     const fetchAnggota = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/v1/member");
-        const data = await response.json();
-        setAnggota(data.data);
+        const response = await api.get("/v1/member?division=Developer");
+        setAnggota(response.data.data);
       } catch (error) {
         console.error("Error fetching anggota:", error);
       }
@@ -121,7 +121,7 @@ const ProjectTable = ({ divisionId, divisionName }) => {
     };
 
     try {
-      await api.post("http://localhost:3000/api/v1/project", newProject);
+      await api.post("/v1/project", newProject);
       Swal.fire("Sukses", "Proyek berhasil ditambahkan", "success");
       fetchData();
       setShowModal(false);
@@ -200,7 +200,7 @@ const ProjectTable = ({ divisionId, divisionName }) => {
       };
 
       await api.put(
-        `http://localhost:3000/api/v1/project/${id}`,
+        `/v1/project/${id}`,
         updatedProject
       );
       Swal.fire({
@@ -235,7 +235,7 @@ const ProjectTable = ({ divisionId, divisionName }) => {
 
     if (confirm.isConfirmed) {
       try {
-        await api.delete(`http://localhost:3000/api/v1/project/${id}`);
+        await api.delete(`/v1/project/${id}`);
         Swal.fire({
           icon: "success",
           title: "Berhasil!",
@@ -257,12 +257,12 @@ const ProjectTable = ({ divisionId, divisionName }) => {
   };
 
   // Filter data by divisionId if provided
-  const filteredData = divisionId ? data.filter((row) => row.divisionId === divisionId) : data;
+  const filteredData = data;
 
   return (
     <div className="bg-white rounded-lg p-6 mt-8">
       <div className="flex flex-col sm:flex-row gap-2 mb-6 ">
-        <h2 className="text-xl font-semibold mr-3">{divisionName ? `Divisi ${divisionName}` : "Semua Divisi"}</h2>
+        <h2 className="text-xl font-semibold mr-3">Semua Divisi</h2>
         <button
           onClick={handleModal}
           className="px-4 py-2 rounded-lg bg-primer text-white ml-auto"
@@ -555,8 +555,7 @@ const ProjectTable = ({ divisionId, divisionName }) => {
 };
 
 ProjectTable.propTypes = {
-  divisionId: PropTypes.string,
-  divisionName: PropTypes.string,
+  selectedMonth: PropTypes.string,
 };
 
 export default ProjectTable;

@@ -4,11 +4,12 @@ const userController = require("../controllers/user.controller.js");
 const divisionController = require("../controllers/division.controller.js");
 const projectController = require("../controllers/project.controller.js");
 const memberController = require("../controllers/member.controller.js");
-const kpiController = require ("../controllers/kpi.controller.js")
-const assessmentController = require ("../controllers/assesment.controller.js")
-const dashboardController = require ("../controllers/dashboard.controller.js")
-const metricController = require ("../controllers/metric.controller.js")
-const spkController = require ("../controllers/spk.controller.js")
+const kpiController = require("../controllers/kpi.controller.js")
+const assessmentController = require("../controllers/assesment.controller.js")
+const dashboardController = require("../controllers/dashboard.controller.js")
+const metricController = require("../controllers/metric.controller.js")
+const spkController = require("../controllers/spk.controller.js")
+const assesmentNonDevController = require("../controllers/assesmentNonDev.controller.js")
 
 publicRoute.post("/api/v1/login", userController.login);
 
@@ -25,6 +26,7 @@ publicRoute.delete("/api/v1/division/:id", divisionController.deleteDivision);
 
 //project
 publicRoute.get("/api/v1/projects", projectController.getAllProjects);
+publicRoute.get("/api/v1/projects/done", projectController.getDoneProjectsInMonth);
 publicRoute.get("/api/v1/project/:id", projectController.getProjectById);
 publicRoute.post("/api/v1/project", projectController.createProject);
 publicRoute.put("/api/v1/project/:id", projectController.updateProject);
@@ -52,6 +54,14 @@ publicRoute.get("/api/v1/assessments/user", assessmentController.getAssessmentsB
 publicRoute.put("/api/v1/assessments", assessmentController.updateAssessment);
 publicRoute.delete("/api/v1/assessments/:id", assessmentController.deleteAssessment);
 publicRoute.get("/api/v1/assessments/project/:projectId", assessmentController.getAssessmentTable);
+
+// assesmentNonDev
+publicRoute.post("/api/v1/assessments-nondev", assesmentNonDevController.createAssessment);
+publicRoute.get("/api/v1/assessments-nondev", assesmentNonDevController.getAllAssessments);
+publicRoute.get("/api/v1/assessments-nondev/user", assesmentNonDevController.getAssessmentsByUser);
+publicRoute.put("/api/v1/assessments-nondev", assesmentNonDevController.updateAssessment);
+publicRoute.delete("/api/v1/assessments-nondev/:id", assesmentNonDevController.deleteAssessment);
+publicRoute.get("/api/v1/assessments-nondev/division/:division", assesmentNonDevController.getAssessmentTableByDivision);
 
 //metric
 publicRoute.post("/api/v1/kpi-reports", metricController.getKPIReportByUser);

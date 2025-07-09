@@ -5,10 +5,10 @@ const kpiController = {
  createKpi: async (req, res) => {
   const { kodeKpi, kpiName, target, bobot, char, divisionId } = req.body;
 
-  if (!kodeKpi || !kpiName || target === undefined || bobot === undefined || !char || !divisionId) {
+  if (!kodeKpi || !kpiName || target === undefined || bobot === undefined || !char) {
     return res.status(400).json({
       error: true,
-      message: "Kode KPI, Nama KPI, Target, Bobot, Karakteristik, dan Division ID wajib diisi.",
+      message: "Kode KPI, Nama KPI, Target, Bobot, dan Karakteristik wajib diisi.",
     });
   }
 
@@ -21,7 +21,7 @@ const kpiController = {
         target: targetInPercent,
         bobot,
         char,
-        divisionId,  
+        ...(divisionId && { divisionId }),  
       },
     });
 
@@ -119,10 +119,10 @@ editKpi: async (req, res) => {
   const { id } = req.params;
   const { kodeKpi, kpiName, target, bobot, char, divisionId } = req.body;
 
-  if (!kodeKpi || !kpiName || target === undefined || bobot === undefined || !char || !divisionId) {
+  if (!kodeKpi || !kpiName || target === undefined || bobot === undefined || !char) {
     return res.status(400).json({
       error: true,
-      message: "Kode KPI, Nama KPI, Target, Bobot, Karakteristik, dan Division ID wajib diisi.",
+      message: "Kode KPI, Nama KPI, Target, Bobot, dan Karakteristik wajib diisi.",
     });
   }
 
@@ -145,7 +145,7 @@ editKpi: async (req, res) => {
         target: targetInPercent,
         bobot,
         char,
-        divisionId,  
+        ...(divisionId && { divisionId }),  
       },
     });
 

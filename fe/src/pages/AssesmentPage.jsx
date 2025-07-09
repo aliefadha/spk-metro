@@ -2,11 +2,12 @@ import MainLayout from "@/components/layouts/MainLayout";
 import AssesmentTable from "@/components/sections/dashboard/AssesmentTable";
 import api from "@/utils/axios";
 import { useState, useEffect } from "react";
-import { FileText } from "lucide-react";
+import { FileText, Calendar } from "lucide-react";
 
 export default function AssesmentPage() {
   const [divisions, setDivisions] = useState([]);
   const [selectedDivision, setSelectedDivision] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("");
 
   useEffect(() => {
     api.get("/v1/division").then((res) => {
@@ -33,6 +34,16 @@ export default function AssesmentPage() {
             </option>
           ))}
         </select>
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-primer" />
+          <input
+            type="month"
+            className="px-4 py-2 border border-primer rounded-lg bg-transparent text-primer"
+            value={selectedMonth}
+            onChange={e => setSelectedMonth(e.target.value)}
+            placeholder="Filter berdasarkan bulan"
+          />
+        </div>
       </div>
       <AssesmentTable 
         selectedDivision={selectedDivision} 
@@ -41,6 +52,7 @@ export default function AssesmentPage() {
             ? (divisions.find((d) => d.id === selectedDivision)?.divisionName || "")
             : ""
         }
+        selectedMonth={selectedMonth}
       />
     </MainLayout>
   );

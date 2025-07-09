@@ -80,8 +80,21 @@ const memberController = {
   // Get all members
   getAllMembers: async (req, res) => {
     try {
+      const { division } = req.query;
+      
+      let whereClause = { role: "MEMBER" };
+      
+      if (division) {
+        whereClause = {
+          ...whereClause,
+          division: {
+            divisionName: division
+          }
+        };
+      }
+
       const members = await prisma.user.findMany({
-        where: { role: "MEMBER" },
+        where: whereClause,
         include: {
           division: {
             select: { divisionName: true },
