@@ -18,6 +18,7 @@ const ProjectTable = ({ selectedMonth }) => {
     projectName: "",
     bobot: "",
     deadline: "",
+    tanggal_selesai: "",
     status: "BACKLOG",
     projectManager: "",
   });
@@ -28,6 +29,7 @@ const ProjectTable = ({ selectedMonth }) => {
     projectName: "",
     bobot: "",
     deadline: "",
+    tanggal_selesai: "",
     status: "",
     projectManager: "",
   });
@@ -116,6 +118,7 @@ const ProjectTable = ({ selectedMonth }) => {
       projectName: formData.projectName,
       bobot: parseFloat(formData.bobot),
       deadline: formData.deadline,
+      tanggal_selesai: formData.tanggal_selesai || null,
       status: formData.status,
       projectCollaborator,
     };
@@ -129,6 +132,7 @@ const ProjectTable = ({ selectedMonth }) => {
         projectName: "",
         bobot: "",
         deadline: "",
+        tanggal_selesai: "",
         status: "BACKLOG",
         projectManager: "",
       });
@@ -146,6 +150,7 @@ const ProjectTable = ({ selectedMonth }) => {
       projectName: project.projectName,
       bobot: project.bobot,
       deadline: project.deadline,
+      tanggal_selesai: project.tanggal_selesai || "",
       status: project.status,
       projectManager:
         project.projectCollaborator.find((col) => col.isProjectManager)
@@ -177,6 +182,7 @@ const ProjectTable = ({ selectedMonth }) => {
       projectName: "",
       bobot: "",
       deadline: "",
+      tanggal_selesai: "",
       status: "",
       projectManager: "",
     });
@@ -189,6 +195,7 @@ const ProjectTable = ({ selectedMonth }) => {
         projectName: editValues.projectName,
         bobot: parseFloat(editValues.bobot),
         deadline: editValues.deadline,
+        tanggal_selesai: editValues.tanggal_selesai || null,
         status: editValues.status,
         projectCollaborator: [
           { userId: editValues.projectManager, isProjectManager: true },
@@ -278,6 +285,7 @@ const ProjectTable = ({ selectedMonth }) => {
               <th className="px-4 py-3 text-left text-primer">Nama Proyek</th>
               <th className="px-4 py-3 text-left text-primer">Bobot</th>
               <th className="px-4 py-3 text-left text-primer">Deadline</th>
+              <th className="px-4 py-3 text-left text-primer">Tanggal Selesai</th>
               <th className="px-4 py-3 text-left text-primer">PM</th>
               <th className="px-4 py-3 text-left text-primer">Anggota</th>
               <th className="px-4 py-3 text-left text-primer">Status</th>
@@ -331,6 +339,21 @@ const ProjectTable = ({ selectedMonth }) => {
                     />
                   ) : (
                     row.deadline
+                  )}
+                </td>
+
+                {/* Tanggal Selesai */}
+                <td className="px-4 py-3">
+                  {isEditing === row.id ? (
+                    <input
+                      type="date"
+                      name="tanggal_selesai"
+                      value={editValues.tanggal_selesai}
+                      onChange={handleEditChange}
+                      className="w-full border p-1 rounded"
+                    />
+                  ) : (
+                    row.tanggal_selesai || "-"
                   )}
                 </td>
 
@@ -483,6 +506,15 @@ const ProjectTable = ({ selectedMonth }) => {
                   className="w-full border p-2 rounded-md"
                   onChange={handleChange}
                   required
+                />
+              </div>
+              <div className="mb-4 flex items-center">
+                <label className="w-1/3 text-sm font-medium">Tanggal Selesai</label>
+                <input
+                  type="date"
+                  name="tanggal_selesai"
+                  className="w-full border p-2 rounded-md"
+                  onChange={handleChange}
                 />
               </div>
               <div className="mb-4 flex items-center">

@@ -13,33 +13,39 @@ model user {
   password            String
   fullName            String
   role                Role
-  projectCollaborator projectCollaborator[]
   divisionId          String?
-  token               token[]
-  division            division?             @relation(fields: [divisionId], references: [id])
   created_at          DateTime              @default(now())
   updated_at          DateTime              @updatedAt
+  assesmentNonDev     assesmentNonDev[]
+  projectCollaborator projectCollaborator[]
+  token               token[]
+  division            division?             @relation(fields: [divisionId], references: [id])
+
+  @@index([divisionId], map: "user_divisionId_fkey")
 }
 
 model token {
   id         String   @id @default(uuid())
   token      String   @db.Text
-  user       user?    @relation(fields: [userId], references: [id])
   userId     String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+  user       user?    @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "token_userId_fkey")
 }
 
 model projectCollaborator {
   projectId        String
   userId           String
   isProjectManager Boolean
-  user             user     @relation(fields: [userId], references: [id])
-  project          project  @relation(fields: [projectId], references: [id])
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
+  project          project  @relation(fields: [projectId], references: [id])
+  user             user     @relation(fields: [userId], references: [id])
 
   @@id([projectId, userId])
+  @@index([userId], map: "projectCollaborator_userId_fkey")
 }
 
 model project {
@@ -47,11 +53,12 @@ model project {
   projectName         String
   bobot               Float
   deadline            String
+  tanggal_selesai     String?
   status              StatusProject
-  projectCollaborator projectCollaborator[]
-  asessment           assesment[]
   created_at          DateTime              @default(now())
   updated_at          DateTime              @updatedAt
+  asessment           assesment[]
+  projectCollaborator projectCollaborator[]
 }
 
 model metric {
@@ -60,12 +67,12 @@ model metric {
   kpiName         String
   target          Float
   bobot           Float
-  char            Karakteristik
-  divisionId      String
-  assesmentNonDev assesmentNonDev[]
-  asessment       assesment[]
   created_at      DateTime          @default(now())
   updated_at      DateTime          @updatedAt
+  char            Karakteristik
+  divisionId      String
+  asessment       assesment[]
+  assesmentNonDev assesmentNonDev[]
 }
 
 model assesment {
@@ -75,13 +82,16 @@ model assesment {
   userId              String
   value               Int
   assesmentDate       String
-  project             project               @relation(fields: [projectId], references: [id])
+  created_at          DateTime              @default(now())
+  updated_at          DateTime              @updatedAt
   metric              metric                @relation(fields: [metricId], references: [id])
+  project             project               @relation(fields: [projectId], references: [id])
   assesmentResult     assesmentResult[]
   metricNormalization metricNormalization[]
   metricResult        metricResult[]
-  created_at          DateTime              @default(now())
-  updated_at          DateTime              @updatedAt
+
+  @@index([metricId], map: "assesment_metricId_fkey")
+  @@index([projectId], map: "assesment_projectId_fkey")
 }
 
 model assesmentNonDev {
@@ -90,12 +100,16 @@ model assesmentNonDev {
   userId              String
   value               Int
   assesmentDate       String
+  created_at          DateTime              @default(now())
+  updated_at          DateTime              @updatedAt
   metric              metric                @relation(fields: [metricId], references: [id])
+  user                user                  @relation(fields: [userId], references: [id])
   assesmentResult     assesmentResult[]
   metricNormalization metricNormalization[]
   metricResult        metricResult[]
-  created_at          DateTime              @default(now())
-  updated_at          DateTime              @updatedAt
+
+  @@index([metricId], map: "assesmentNonDev_metricId_fkey")
+  @@index([userId], map: "assesmentNonDev_userId_fkey")
 }
 
 model metricResult {
@@ -103,23 +117,29 @@ model metricResult {
   totalUtility      Float
   vikorIndex        Float
   maximumDeviation  Float
-  assesment         assesment?       @relation(fields: [assesmentId], references: [id])
   assesmentId       String?
-  assesmentNonDev   assesmentNonDev? @relation(fields: [assesmentNonDevId], references: [id])
-  assesmentNonDevId String?
   created_at        DateTime         @default(now())
   updated_at        DateTime         @updatedAt
+  assesmentNonDevId String?
+  assesment         assesment?       @relation(fields: [assesmentId], references: [id])
+  assesmentNonDev   assesmentNonDev? @relation(fields: [assesmentNonDevId], references: [id])
+
+  @@index([assesmentId], map: "metricResult_assesmentId_fkey")
+  @@index([assesmentNonDevId], map: "metricResult_assesmentNonDevId_fkey")
 }
 
 model metricNormalization {
   id                String           @id @default(uuid())
   value             Float
-  assesment         assesment?       @relation(fields: [assesmentId], references: [id])
   assesmentId       String?
-  assesmentNonDev   assesmentNonDev? @relation(fields: [assesmentNonDevId], references: [id])
-  assesmentNonDevId String?
   created_at        DateTime         @default(now())
   updated_at        DateTime         @updatedAt
+  assesmentNonDevId String?
+  assesment         assesment?       @relation(fields: [assesmentId], references: [id])
+  assesmentNonDev   assesmentNonDev? @relation(fields: [assesmentNonDevId], references: [id])
+
+  @@index([assesmentId], map: "metricNormalization_assesmentId_fkey")
+  @@index([assesmentNonDevId], map: "metricNormalization_assesmentNonDevId_fkey")
 }
 
 model assesmentResult {
@@ -127,12 +147,22 @@ model assesmentResult {
   skor              Float
   status            StatusAssesment
   isPersonal        Boolean
-  assesment         assesment?       @relation(fields: [assesmentId], references: [id])
   assesmentId       String?
-  assesmentNonDev   assesmentNonDev? @relation(fields: [assesmentNonDevId], references: [id])
-  assesmentNonDevId String?
   created_at        DateTime         @default(now())
   updated_at        DateTime         @updatedAt
+  assesmentNonDevId String?
+  assesment         assesment?       @relation(fields: [assesmentId], references: [id])
+  assesmentNonDev   assesmentNonDev? @relation(fields: [assesmentNonDevId], references: [id])
+
+  @@index([assesmentId], map: "assesmentResult_assesmentId_fkey")
+  @@index([assesmentNonDevId], map: "assesmentResult_assesmentNonDevId_fkey")
+}
+
+model division {
+  id           String @id @default(uuid())
+  divisionName String @unique
+  totalMember  Int    @default(0)
+  user         user[]
 }
 
 enum StatusAssesment {
@@ -144,13 +174,6 @@ enum StatusProject {
   DONE
   ONPROGRESS
   BACKLOG
-}
-
-model division {
-  id           String @id @default(uuid())
-  divisionName String @unique
-  totalMember  Int    @default(0)
-  user         user[]
 }
 
 enum Role {

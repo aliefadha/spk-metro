@@ -10,6 +10,7 @@ npm run dev      # Development server with Prisma generation + nodemon
 npm start        # Production server with Prisma generation
 npm run seed     # Seed database with initial data
 npm run reset    # Reset database
+node prisma/comprehensive.seed.js  # Run comprehensive seeder with sample data
 ```
 
 ### Frontend (fe/)
@@ -39,10 +40,11 @@ This is a full-stack KPI management and assessment system with:
 
 The system centers around performance assessment with these key entities:
 - **Users**: With roles and division assignments
-- **Projects**: With collaborators and status tracking
+- **Projects**: With collaborators, status tracking, and completion dates (`tanggal_selesai`)
 - **Metrics**: KPIs with targets, weights, and characteristics (Cost/Benefit)
 - **Assessments**: Both development project assessments and non-dev assessments
 - **Results**: Metric normalization, scoring, and VIKOR analysis
+- **Divisions**: Marketing and Developer divisions with member counts
 
 ## Key Business Logic
 
@@ -85,3 +87,41 @@ fe/
 - Database migrations handled by Prisma
 - CORS configured to allow all origins
 - Environment variables required for database connection and JWT secrets
+
+## Recent Updates & Features
+
+### Database Migrations
+- Added `tanggal_selesai` field to project model for completion date tracking
+- Migration created: `20250711031013_add_tanggal_selesai_to_project`
+- Comprehensive seeder available with sample data from production
+
+### UI/UX Improvements
+- **Conditional Table Display**: Tables now hide when no division/selection is made
+  - `KPIReportTable.jsx`: Hidden when no project and user selected
+  - `TableKPI.jsx`: Hidden when no division selected  
+  - `AssesmentTable.jsx`: Hidden when no division selected
+- **Enhanced Assessment Table**: 
+  - Shows all division members for non-developer divisions
+  - Displays members even without assessment data (shows "-")
+  - Better empty state handling
+
+### Project Management
+- **ProjectTable.jsx**: Added `tanggal_selesai` field support
+  - New "Tanggal Selesai" column in project table
+  - Date picker input in add/edit forms
+  - Optional field with null value support
+
+### Data Seeding
+- **Comprehensive Seeder**: `prisma/comprehensive.seed.js`
+  - Includes 2 divisions (Marketing, Developer)
+  - 11 users with proper password hashing (password: "password")
+  - 5 KPI metrics for Developer division
+  - 2 completed projects with completion dates
+  - 6 project collaborators
+  - 10 sample assessments
+  - Super Admin: superadmin@gmail.com / password
+
+### Component Architecture
+- Better state management for division-based filtering
+- Improved error handling and user feedback
+- Consistent empty state messaging across components

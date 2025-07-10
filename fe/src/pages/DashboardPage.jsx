@@ -3,7 +3,6 @@ import MainLayout from "@/components/layouts/MainLayout";
 import WelcomeSection from "@/components/sections/dashboard/WelcomeSection";
 import StatCard from "@/components/sections/dashboard/StatCard";
 import { LayoutGrid, Users, ListTodo, Briefcase } from "lucide-react";
-import KPIReportTableIndividual from "@/components/sections/dashboard/KPIReportTableIndividual";
 import { getUser } from "@/utils/auth";
 
 export default function DashboardPage() {
@@ -85,7 +84,6 @@ export default function DashboardPage() {
           ))
         )}
       </div>
-      <KPIReportTableIndividual selectedDivision="" selectedMonth="" />
     </MainLayout>
   );
 }

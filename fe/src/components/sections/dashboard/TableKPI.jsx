@@ -231,137 +231,141 @@ const TableKPI = ({ divisionId, divisionName }) => {
         <h2 className="text-xl font-semibold mr-3">
           {divisionName ? `KPI Divisi ${divisionName}` : "Semua KPI"}
         </h2>
+        {divisionId && (
         <button
           onClick={handleModal}
           className="px-4 py-2 rounded-lg bg-primer text-white  ml-auto"
         >
           + Tambah KPI
         </button>
+        )}
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-purple-50">
-              <th className="px-4 py-3 text-left text-primer">Kode KPI</th>
-              <th className="px-4 py-3 text-left text-primer">Nama KPI </th>
-              <th className="px-4 py-3 text-left text-primer">Karakteristik</th>
-              <th className="px-4 py-3 text-left text-primer">Bobot</th>
-              <th className="px-4 py-3 text-left text-primer">Target</th>
-              <th className="px-4 py-3 text-left text-primer">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredData.map((row) => (
-              <tr key={row.id} className="border-b">
-                <td className="px-4 py-3">
-                  {isEditing === row.id ? (
-                    <input
-                      type="text"
-                      name="kodeKpi"
-                      value={editValues.kodeKpi}
-                      onChange={handleEditChange}
-                      className="w-full border p-1 rounded"
-                    />
-                  ) : (
-                    row.kodeKpi
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  {isEditing === row.id ? (
-                    <input
-                      type="text"
-                      name="kpiName"
-                      value={editValues.kpiName}
-                      onChange={handleEditChange}
-                      className="w-full border p-1 rounded"
-                    />
-                  ) : (
-                    row.kpiName
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  {isEditing === row.id ? (
-                    <select
-                      name="char"
-                      value={editValues.char}
-                      onChange={handleEditChange}
-                      className="w-full border p-1 rounded"
-                    >
-                      <option value="Benefit">Benefit</option>
-                      <option value="Cost">Cost</option>
-                    </select>
-                  ) : (
-                    row.char
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  {isEditing === row.id ? (
-                    <input
-                      type="number"
-                      name="bobot"
-                      value={editValues.bobot}
-                      onChange={handleEditChange}
-                      className="w-full border p-1 rounded"
-                    />
-                  ) : (
-                    row.bobot
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  {isEditing === row.id ? (
-                    <input
-                      type="number"
-                      name="target"
-                      value={editValues.target}
-                      onChange={handleEditChange}
-                      className="w-full border p-1 rounded"
-                    />
-                  ) : (
-                    `${row.target}`
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex space-x-4">
-                    {isEditing === row.id ? (
-                      <>
-                        <button
-                          onClick={() => handleUpdate(row.id)}
-                          className="p-1 hover:text-green-500"
-                        >
-                          <Check className="w-5 h-5 text-green-500" />
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="p-1 hover:text-red-600"
-                        >
-                          <X className="w-5 h-5 text-red-500" />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => handleEdit(row)}
-                          className="p-1 hover:text-yellow-500"
-                        >
-                          <Edit className="w-5 h-5 text-yellow-400" />
-                        </button>
-                        <button
-                          className="p-1 hover:text-red-600"
-                          onClick={() => handleDelete(row.id)}
-                        >
-                          <Trash2 className="w-5 h-5 text-red-500" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </td>
+      {divisionId && (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-purple-50">
+                <th className="px-4 py-3 text-left text-primer">Kode KPI</th>
+                <th className="px-4 py-3 text-left text-primer">Nama KPI </th>
+                <th className="px-4 py-3 text-left text-primer">Karakteristik</th>
+                <th className="px-4 py-3 text-left text-primer">Bobot</th>
+                <th className="px-4 py-3 text-left text-primer">Target</th>
+                <th className="px-4 py-3 text-left text-primer">Aksi</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredData.map((row) => (
+                <tr key={row.id} className="border-b">
+                  <td className="px-4 py-3">
+                    {isEditing === row.id ? (
+                      <input
+                        type="text"
+                        name="kodeKpi"
+                        value={editValues.kodeKpi}
+                        onChange={handleEditChange}
+                        className="w-full border p-1 rounded"
+                      />
+                    ) : (
+                      row.kodeKpi
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {isEditing === row.id ? (
+                      <input
+                        type="text"
+                        name="kpiName"
+                        value={editValues.kpiName}
+                        onChange={handleEditChange}
+                        className="w-full border p-1 rounded"
+                      />
+                    ) : (
+                      row.kpiName
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {isEditing === row.id ? (
+                      <select
+                        name="char"
+                        value={editValues.char}
+                        onChange={handleEditChange}
+                        className="w-full border p-1 rounded"
+                      >
+                        <option value="Benefit">Benefit</option>
+                        <option value="Cost">Cost</option>
+                      </select>
+                    ) : (
+                      row.char
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {isEditing === row.id ? (
+                      <input
+                        type="number"
+                        name="bobot"
+                        value={editValues.bobot}
+                        onChange={handleEditChange}
+                        className="w-full border p-1 rounded"
+                      />
+                    ) : (
+                      row.bobot
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {isEditing === row.id ? (
+                      <input
+                        type="number"
+                        name="target"
+                        value={editValues.target}
+                        onChange={handleEditChange}
+                        className="w-full border p-1 rounded"
+                      />
+                    ) : (
+                      `${row.target}`
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex space-x-4">
+                      {isEditing === row.id ? (
+                        <>
+                          <button
+                            onClick={() => handleUpdate(row.id)}
+                            className="p-1 hover:text-green-500"
+                          >
+                            <Check className="w-5 h-5 text-green-500" />
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="p-1 hover:text-red-600"
+                          >
+                            <X className="w-5 h-5 text-red-500" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleEdit(row)}
+                            className="p-1 hover:text-yellow-500"
+                          >
+                            <Edit className="w-5 h-5 text-yellow-400" />
+                          </button>
+                          <button
+                            className="p-1 hover:text-red-600"
+                            onClick={() => handleDelete(row.id)}
+                          >
+                            <Trash2 className="w-5 h-5 text-red-500" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Modal */}
       {showModal && (

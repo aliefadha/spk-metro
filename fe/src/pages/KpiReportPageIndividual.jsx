@@ -56,13 +56,6 @@ export default function KpiReportPageIndividual() {
           onChange={(e) => setSelectedMonth(e.target.value)}
           placeholder="Filter berdasarkan bulan"
         />
-        <button 
-          onClick={handleExport}
-          className="px-4 py-2 border border-primer rounded-lg bg-transparent text-primer ml-auto hover:bg-primer hover:text-white transition-colors flex items-center gap-2"
-        >
-          <Download className="w-4 h-4" />
-          Export
-        </button>
       </div>
       <KPIReportTableIndividual selectedDivision={selectedDivision} selectedMonth={selectedMonth} />
     </MainLayout>

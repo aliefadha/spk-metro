@@ -12,6 +12,7 @@ const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState("");
   const [collaborators, setCollaborators] = useState([]);
+  const [divisionMembers, setDivisionMembers] = useState([]);
 
   // Fetch projects only if divisionName is Developer - filter only DONE projects
   useEffect(() => {
@@ -41,14 +42,13 @@ const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
 
   useEffect(() => {
     const fetchKPI = async () => {
+      if (!selectedDivision || !divisionName) {
+        setKpiList([]);
+        return;
+      }
+      
       try {
-        let url = "http://localhost:3000/api/v1/metrics";
-        
-        // If a division is selected, fetch KPIs specific to that division
-        if (selectedDivision && divisionName) {
-          url = `http://localhost:3000/api/v1/metrics/division?divisionId=${selectedDivision}`;
-        }
-        
+        const url = `http://localhost:3000/api/v1/metrics/division?divisionId=${selectedDivision}`;
         const response = await api.get(url);
         setKpiList(response.data.data);
       } catch (error) {
@@ -77,6 +77,23 @@ const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
     };
     fetchCollaborators();
   }, [selectedProject, divisionName]);
+
+  // Fetch division members for non-developer divisions
+  useEffect(() => {
+    if (divisionName === "Developer" || !divisionName) return;
+    
+    const fetchDivisionMembers = async () => {
+      try {
+        const response = await api.get(`/v1/member?division=${divisionName}`);
+        setDivisionMembers(response.data.data || []);
+      } catch (error) {
+        console.error("Error fetching division members:", error);
+        setDivisionMembers([]);
+      }
+    };
+    
+    fetchDivisionMembers();
+  }, [divisionName]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -146,13 +163,7 @@ const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
       }
     } catch (error) {
       console.error("Gagal memuat data assessment atau anggota:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Gagal Memuat Data",
-        text:
-          error.response?.data?.message ||
-          "Terjadi kesalahan saat memuat data.",
-      });
+      setAssessments([]);
     }
   }, [selectedProject, divisionName, selectedMonth]);
 
@@ -233,6 +244,25 @@ const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
     filteredAssessments = filteredAssessments.filter((item) =>
       collaboratorIds.includes(item.userId)
     );
+  } else if (divisionName && divisionName !== "Developer" && divisionMembers.length > 0) {
+    // For non-developer divisions, show all division members even if they don't have assessment data
+    const existingUserIds = assessments.map(item => item.userId);
+    const missingMembers = divisionMembers.filter(member => !existingUserIds.includes(member.id));
+    
+    // Add missing members with empty metrics
+    const emptyMetrics = kpiList.reduce((acc, kpi) => {
+      acc[kpi.id] = undefined;
+      return acc;
+    }, {});
+    
+    const additionalMembers = missingMembers.map(member => ({
+      userId: member.id,
+      fullName: member.fullName,
+      assesmentDate: null,
+      metrics: emptyMetrics
+    }));
+    
+    filteredAssessments = [...assessments, ...additionalMembers];
   }
 
   return (
@@ -272,23 +302,24 @@ const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
         )}
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-purple-50">
-              <th className="px-4 py-3 text-left text-primer">Nama Member</th>
-              {kpiList.map((kpi) => (
-                <th key={kpi.id} className="px-4 py-3 text-left text-primer">
-                  {kpi.kpiName}
-                </th>
-              ))}
-              <th className="px-4 py-3 text-left text-primer">Aksi</th>
-            </tr>
-          </thead>
+      {selectedDivision && (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-purple-50">
+                <th className="px-4 py-3 text-left text-primer">Nama Member</th>
+                {kpiList.map((kpi) => (
+                  <th key={kpi.id} className="px-4 py-3 text-center text-primer">
+                    {kpi.kpiName}
+                  </th>
+                ))}
+                <th className="px-4 py-3 text-left text-primer">Aksi</th>
+              </tr>
+            </thead>
           <tbody>
             {!selectedDivision ? (
               <tr>
-                <td colSpan={kpiList.length + 2} className="text-center py-8 text-gray-500">
+                <td colSpan={2} className="text-center py-8 text-gray-500">
                   <div className="flex flex-col items-center gap-2">
                     <FileText className="w-12 h-12 text-gray-300" />
                     <p>Silakan pilih divisi terlebih dahulu untuk melihat assessment</p>
@@ -297,7 +328,7 @@ const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
               </tr>
             ) : kpiList.length === 0 ? (
               <tr>
-                <td colSpan="3" className="text-center py-8 text-gray-500">
+                <td colSpan={2} className="text-center py-8 text-gray-500">
                   <div className="flex flex-col items-center gap-2">
                     <FileText className="w-12 h-12 text-gray-300" />
                     <p>Tidak ada KPI untuk divisi {divisionName}</p>
@@ -373,6 +404,17 @@ const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
           </tbody>
         </table>
       </div>
+      )}
+      
+      {!selectedDivision && (
+        <div className="text-center py-12 text-gray-500">
+          <div className="flex flex-col items-center gap-3">
+            <FileText className="w-16 h-16 text-gray-300" />
+            <p className="text-lg">Silakan pilih divisi terlebih dahulu</p>
+            <p className="text-sm">Untuk melihat data assessment, pilih divisi dari dropdown di atas</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

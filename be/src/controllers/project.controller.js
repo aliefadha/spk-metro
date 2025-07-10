@@ -19,7 +19,7 @@ const projectController = {
                 const endDate = `${year}-${(parseInt(monthNum) + 1).toString().padStart(2, '0')}-01`;
 
                 whereClause = {
-                    deadline: {
+                    tanggal_selesai: {
                         gte: startDate,
                         lt: endDate
                     }
@@ -87,7 +87,7 @@ const projectController = {
 
     createProject: async (req, res) => {
         try {
-            const { projectName, bobot, deadline, status, projectCollaborator } = req.body;
+            const { projectName, bobot, deadline, status, projectCollaborator, tanggal_selesai } = req.body;
 
             console.log("REQ.BODY:", JSON.stringify(req.body, null, 2));
 
@@ -97,6 +97,7 @@ const projectController = {
                     bobot,
                     deadline,
                     status,
+                    tanggal_selesai,
                     projectCollaborator: {
                         create: projectCollaborator.map(collaborator => ({
                             userId: collaborator.userId,
@@ -167,7 +168,7 @@ const projectController = {
     updateProject: async (req, res) => {
         try {
             const { id } = req.params;
-            const { projectName, bobot, deadline, status, projectCollaborator } = req.body;
+            const { projectName, bobot, deadline, status, projectCollaborator, tanggal_selesai } = req.body;
 
             const updatedProject = await prisma.project.update({
                 where: { id },
@@ -176,6 +177,7 @@ const projectController = {
                     bobot,
                     deadline,
                     status,
+                    tanggal_selesai,
                     projectCollaborator: {
                         deleteMany: {},
                         create: projectCollaborator,

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "@/utils/axios";
+import { getUser } from "@/utils/auth";
 import Swal from "sweetalert2";
 import PropTypes from "prop-types";
 import { FileText } from "lucide-react";
@@ -10,26 +11,25 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
   const [error, setError] = useState(null);
   const [kpiList, setKpiList] = useState([]);
 
-  // Fetch KPI Metrics based on selected division
+  // Fetch KPI Metrics based on logged user's division
   useEffect(() => {
     const fetchKPI = async () => {
       try {
-        let url = "http://localhost:3000/api/v1/metrics";
-        
-        // If a division is selected, fetch KPIs specific to that division
-        if (selectedDivision) {
-          // First, get division ID from division name
-          const divisionsResponse = await api.get("http://localhost:3000/api/v1/division");
-          const divisions = divisionsResponse.data.data;
-          const selectedDivisionData = divisions.find(d => d.divisionName === selectedDivision);
-          
-          if (selectedDivisionData) {
-            url = `http://localhost:3000/api/v1/metrics/division?divisionId=${selectedDivisionData.id}`;
-          }
+        const currentUser = getUser();
+        if (!currentUser) {
+          console.error("No user found");
+          return;
         }
-        
-        const response = await api.get(url);
-        setKpiList(response.data.data);
+
+        // Fetch KPIs for the logged user's division
+        if (currentUser.divisionId) {
+          const response = await api.get(`http://localhost:3000/api/v1/metrics/division?divisionId=${currentUser.divisionId}`);
+          setKpiList(response.data.data);
+        } else {
+          // If no divisionId, fetch all KPIs (fallback)
+          const response = await api.get("http://localhost:3000/api/v1/metrics");
+          setKpiList(response.data.data);
+        }
       } catch (error) {
         console.error("Gagal memuat KPI:", error);
         setKpiList([]);
@@ -37,16 +37,34 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
     };
 
     fetchKPI();
-  }, [selectedDivision]);
+  }, []);
 
-  // Fetch data KPI Report dari API untuk non-developer divisions
-  const fetchKPIReport = useCallback(async (divisionName = "", month = "") => {
+  // Fetch logged user's individual KPI Report
+  const fetchKPIReport = useCallback(async (month = "") => {
     try {
       setLoading(true);
+      const currentUser = getUser();
+      
+      if (!currentUser) {
+        console.error("No user found");
+        return;
+      }
+
+      // Get user's division information
+      let userDivision = null;
+      if (currentUser.divisionId) {
+        try {
+          const divisionsResponse = await api.get("http://localhost:3000/api/v1/division");
+          const divisions = divisionsResponse.data.data;
+          userDivision = divisions.find(d => d.id === currentUser.divisionId);
+        } catch (error) {
+          console.error("Error fetching division info:", error);
+        }
+      }
+
       let response;
       
-      if (divisionName) {
-        if (divisionName === "Developer") {
+      if (userDivision && userDivision.divisionName === "Developer") {
           // For Developer division, we need to get all projects and their assessments
           let projectsUrl = "http://localhost:3000/api/v1/projects";
           
@@ -81,22 +99,28 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
             }
           }
           
-          // Group assessments by user and calculate weighted scores
-          const userAssessments = {};
-          allAssessments.forEach(assessment => {
-            if (!userAssessments[assessment.userId]) {
-              userAssessments[assessment.userId] = {
-                userId: assessment.userId,
-                fullName: assessment.fullName,
-                assesmentDate: assessment.assesmentDate,
-                metrics: {}
-              };
+          // Filter assessments for the logged user only and calculate weighted scores
+          const userAssessments = {
+            userId: currentUser.id,
+            fullName: currentUser.fullName,
+            assesmentDate: null,
+            metrics: {}
+          };
+
+          // Process only assessments for the current user
+          const currentUserAssessments = allAssessments.filter(assessment => 
+            assessment.userId === currentUser.id
+          );
+
+          currentUserAssessments.forEach(assessment => {
+            if (!userAssessments.assesmentDate) {
+              userAssessments.assesmentDate = assessment.assesmentDate;
             }
             
             // Calculate weighted scores for each metric
             assessment.metrics.forEach(metric => {
-              if (!userAssessments[assessment.userId].metrics[metric.metricId]) {
-                userAssessments[assessment.userId].metrics[metric.metricId] = {
+              if (!userAssessments.metrics[metric.metricId]) {
+                userAssessments.metrics[metric.metricId] = {
                   totalWeightedScore: 0,
                   totalWeight: 0
                 };
@@ -118,33 +142,36 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
                 
                 // Add weighted score: skorAkhir * project.bobot
                 const weightedScore = skorAkhir * assessment.projectBobot;
-                userAssessments[assessment.userId].metrics[metric.metricId].totalWeightedScore += weightedScore;
-                userAssessments[assessment.userId].metrics[metric.metricId].totalWeight += assessment.projectBobot;
+                userAssessments.metrics[metric.metricId].totalWeightedScore += weightedScore;
+                userAssessments.metrics[metric.metricId].totalWeight += assessment.projectBobot;
               }
             });
           });
           
-          // Convert to expected format with weighted averages
-          let developerData = Object.values(userAssessments).map(user => ({
-            userId: user.userId,
-            fullName: user.fullName,
-            assesmentDate: user.assesmentDate,
-            metrics: kpiList.map(kpi => {
-              const metricData = user.metrics[kpi.id];
-              if (metricData && metricData.totalWeight > 0) {
-                // Calculate weighted average: sum(skorAkhir * bobot) / sum(bobot)
-                const weightedAverage = metricData.totalWeightedScore / metricData.totalWeight;
+          // Convert to expected format with weighted averages for current user only
+          let developerData = [];
+          if (currentUserAssessments.length > 0) {
+            developerData = [{
+              userId: userAssessments.userId,
+              fullName: userAssessments.fullName,
+              assesmentDate: userAssessments.assesmentDate,
+              metrics: kpiList.map(kpi => {
+                const metricData = userAssessments.metrics[kpi.id];
+                if (metricData && metricData.totalWeight > 0) {
+                  // Calculate weighted average: sum(skorAkhir * bobot) / sum(bobot)
+                  const weightedAverage = metricData.totalWeightedScore / metricData.totalWeight;
+                  return {
+                    metricId: kpi.id,
+                    value: Math.round(weightedAverage * 100) / 100 // Round to 2 decimal places
+                  };
+                }
                 return {
                   metricId: kpi.id,
-                  value: Math.round(weightedAverage * 100) / 100 // Round to 2 decimal places
+                  value: 0
                 };
-              }
-              return {
-                metricId: kpi.id,
-                value: 0
-              };
-            })
-          }));
+              })
+            }];
+          }
           
           // Apply client-side month filtering for developer assessments if month is provided
           if (month) {
@@ -165,16 +192,27 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
           }
           
           response = { data: { data: developerData } };
-        } else {
-          // Use the non-dev assessment endpoint for non-developer divisions
-          let url = `http://localhost:3000/api/v1/assessments-nondev/division/${divisionName}`;
+        } else if (userDivision) {
+          // For non-developer divisions, get assessments for the current user only
+          let url = `http://localhost:3000/api/v1/assessments-nondev/division/${userDivision.divisionName}`;
           
           // Add month parameter if provided
           if (month) {
             url += `?month=${month}`;
           }
           
-          response = await api.get(url);
+          const allAssessmentsResponse = await api.get(url);
+          const allAssessments = allAssessmentsResponse.data.data || [];
+          
+          // Filter to only include current user's assessments
+          const currentUserAssessments = allAssessments.filter(assessment => 
+            assessment.userId === currentUser.id
+          );
+          
+          response = { data: { data: currentUserAssessments } };
+        } else {
+          // No division information available
+          response = { data: { data: [] } };
         }
         
         // Format the data to match the expected structure and align with division-specific KPIs
@@ -197,21 +235,15 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
         });
         
         setReportData(formattedData);
-      } else {
-        // Show empty data when no division is selected
-        setReportData([]);
-      }
     } catch (error) {
       console.error("Gagal mengambil data KPI Report:", error);
       setError("Gagal mengambil data");
       setReportData([]);
-      if (divisionName) {
-        Swal.fire({
-          icon: "error",
-          title: "Gagal Memuat Data",
-          text: "Terjadi kesalahan saat mengambil data KPI Report.",
-        });
-      }
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Memuat Data",
+        text: "Terjadi kesalahan saat mengambil data KPI Report.",
+      });
     } finally {
       setLoading(false);
     }
@@ -219,16 +251,16 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
 
   useEffect(() => {
     // Only fetch report data if we have KPIs loaded
-    if (kpiList.length > 0 || !selectedDivision) {
-      fetchKPIReport(selectedDivision, selectedMonth);
+    if (kpiList.length > 0) {
+      fetchKPIReport(selectedMonth);
     }
-  }, [selectedDivision, selectedMonth, kpiList, fetchKPIReport]);
+  }, [selectedMonth, kpiList, fetchKPIReport]);
 
   return (
     <div className="bg-white rounded-lg p-6 mt-8">
       <div className="flex flex-col sm:flex-row gap-2 mb-6 items-center">
         <h2 className="text-xl font-semibold mr-3">
-          {selectedDivision ? `Laporan KPI Individual - ${selectedDivision}` : "Laporan KPI Individual"}
+          Laporan KPI Individual Saya
           {selectedMonth && (
             <span className="text-sm font-normal text-gray-600 ml-2">
               - {new Date(selectedMonth + '-01').toLocaleDateString('id-ID', { year: 'numeric', month: 'long' })}
@@ -249,32 +281,23 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
               <tr className="bg-purple-50">
                 <th className="px-4 py-3 text-left text-primer">Nama Member</th>
                 {kpiList.map((kpi) => (
-                  <th key={kpi.id} className="px-4 py-3 text-left text-primer">
+                  <th key={kpi.id} className="px-4 py-3 text-center text-primer">
                     {kpi.kpiName}
                   </th>
                 ))}
-                <th className="px-4 py-3 text-left text-primer">
+                <th className="px-4 py-3 text-center text-primer">
                   Average Skor
                 </th>
               </tr>
             </thead>
             <tbody>
-              {!selectedDivision ? (
+              {kpiList.length === 0 ? (
                 <tr>
                   <td colSpan="3" className="text-center py-8 text-gray-500">
                     <div className="flex flex-col items-center gap-2">
                       <FileText className="w-12 h-12 text-gray-300" />
-                      <p>Silakan pilih divisi terlebih dahulu</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : kpiList.length === 0 ? (
-                <tr>
-                  <td colSpan="3" className="text-center py-8 text-gray-500">
-                    <div className="flex flex-col items-center gap-2">
-                      <FileText className="w-12 h-12 text-gray-300" />
-                      <p>Tidak ada KPI untuk divisi {selectedDivision}</p>
-                      <p className="text-sm">Silakan tambahkan KPI untuk divisi ini terlebih dahulu</p>
+                      <p>Tidak ada KPI untuk divisi Anda</p>
+                      <p className="text-sm">Silakan hubungi admin untuk menambahkan KPI</p>
                     </div>
                   </td>
                 </tr>
@@ -283,7 +306,7 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
                   <td colSpan={kpiList.length + 2} className="text-center py-8 text-gray-500">
                     <div className="flex flex-col items-center gap-2">
                       <FileText className="w-12 h-12 text-gray-300" />
-                      <p>Tidak ada data assessment untuk divisi {selectedDivision}</p>
+                      <p>Tidak ada data assessment untuk Anda</p>
                     </div>
                   </td>
                 </tr>
@@ -308,6 +331,7 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
           </table>
         )}
       </div>
+
     </div>
   );
 };

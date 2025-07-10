@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "@/utils/axios";
+import { getUser } from "@/utils/auth";
 import Card from "react-bootstrap/Card";
 
 const KPIReportTable = () => {
@@ -13,8 +14,28 @@ const KPIReportTable = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
+        const currentUser = getUser();
+        if (!currentUser) {
+          console.error("No user found");
+          return;
+        }
+
+        // Get all projects and their collaborators
         const response = await api.get("http://localhost:3000/api/v1/projects");
-        setProjects(response.data.data);
+        const allProjects = response.data.data || [];
+        
+        // Filter projects where current user is a collaborator (regardless of PM status)
+        const userCollaboratorProjects = allProjects.filter(project => {
+          // Check if current user is a collaborator in this project
+          if (project.projectCollaborator && project.projectCollaborator.length > 0) {
+            return project.projectCollaborator.some(collab => 
+              collab.userId === currentUser.id
+            );
+          }
+          return false;
+        });
+
+        setProjects(userCollaboratorProjects);
       } catch (error) {
         console.error("Gagal mengambil data project:", error);
       }
@@ -88,50 +109,50 @@ const KPIReportTable = () => {
         </select>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full" style={{ fontSize: "12px" }}>
-          <thead>
-            <tr className="bg-purple-50">
-              <th className="px-4 py-3 text-left text-primer">Metrik</th>
-              <th className="px-4 py-3 text-left text-primer">Bobot</th>
-              <th className="px-4 py-3 text-left text-primer">Target</th>
-              <th className="px-4 py-3 text-left text-primer">Skor Aktual</th>
-              <th className="px-4 py-3 text-left text-primer">Skor Akhir</th>
-              <th className="px-4 py-3 text-left text-primer">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reportData.length > 0 ? (
-              reportData.map((row) => (
-                <tr key={row.metricId} className="border-b">
-                  <td className="px-4 py-3">{row.metricName}</td>
-                  <td className="px-4 py-3">{row.bobot}</td>
-                  <td className="px-4 py-3">{row.target}</td>
-                  <td className="px-4 py-3">{row.skorAktual}</td>
-                  <td className="px-4 py-3">{row.skorAkhir}</td>
-                  <td
-                    className={`px-4 py-3 ${
-                      row.status === "Achieved"
-                        ? "text-green-500"
-                        : "text-red-500"
-                    }`}
-                  >
-                    {row.status}
+      {selectedProject && selectedUser && (
+        <div className="overflow-x-auto">
+          <table className="w-full" style={{ fontSize: "12px" }}>
+            <thead>
+              <tr className="bg-purple-50">
+                <th className="px-4 py-3 text-left text-primer">Metrik</th>
+                <th className="px-4 py-3 text-left text-primer">Bobot</th>
+                <th className="px-4 py-3 text-left text-primer">Target</th>
+                <th className="px-4 py-3 text-left text-primer">Skor Aktual</th>
+                <th className="px-4 py-3 text-left text-primer">Skor Akhir</th>
+                <th className="px-4 py-3 text-left text-primer">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reportData.length > 0 ? (
+                reportData.map((row) => (
+                  <tr key={row.metricId} className="border-b">
+                    <td className="px-4 py-3">{row.metricName}</td>
+                    <td className="px-4 py-3">{row.bobot}</td>
+                    <td className="px-4 py-3">{row.target}</td>
+                    <td className="px-4 py-3">{row.skorAktual}</td>
+                    <td className="px-4 py-3">{row.skorAkhir}</td>
+                    <td
+                      className={`px-4 py-3 ${
+                        row.status === "Achieved"
+                          ? "text-green-500"
+                          : "text-red-500"
+                      }`}
+                    >
+                      {row.status}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="text-center py-4 text-gray-500">
+                    Tidak ada data KPI untuk user ini.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="6" className="text-center py-4 text-gray-500">
-                  {selectedUser && selectedProject
-                    ? "Tidak ada data KPI untuk user ini."
-                    : "Silakan pilih project dan user terlebih dahulu."}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {totalSkor !== null && (
         <div className="mt-6">
