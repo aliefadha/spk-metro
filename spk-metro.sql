@@ -171,6 +171,7 @@ CREATE TABLE `project` (
   `bobot` double NOT NULL,
   `deadline` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
   `status` enum('DONE','ONPROGRESS','BACKLOG') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tanggal_selesai` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   `updated_at` datetime(3) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

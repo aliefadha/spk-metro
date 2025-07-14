@@ -1,6 +1,6 @@
 import MainLayout from "@/components/layouts/MainLayout";
 import KPIReportTableIndividual from "@/components/sections/dashboard/KPIReportTableIndividual";
-import { Calculator, Download } from "lucide-react";
+import { Calculator } from "lucide-react";
 import { useState, useEffect } from "react";
 import api from "@/utils/axios";
 
@@ -24,11 +24,6 @@ export default function KpiReportPageIndividual() {
     fetchDivisions();
   }, []);
 
-  const handleExport = () => {
-    // Export functionality - can be implemented based on requirements
-    console.log("Export functionality to be implemented");
-    // You can implement CSV, PDF, or Excel export here
-  };
 
   return (
     <MainLayout>

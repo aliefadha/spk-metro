@@ -23,19 +23,9 @@ const KPIReportTable = () => {
         // Get all projects and their collaborators
         const response = await api.get("http://localhost:3000/api/v1/projects");
         const allProjects = response.data.data || [];
-        
-        // Filter projects where current user is a collaborator (regardless of PM status)
-        const userCollaboratorProjects = allProjects.filter(project => {
-          // Check if current user is a collaborator in this project
-          if (project.projectCollaborator && project.projectCollaborator.length > 0) {
-            return project.projectCollaborator.some(collab => 
-              collab.userId === currentUser.id
-            );
-          }
-          return false;
-        });
 
-        setProjects(userCollaboratorProjects);
+
+        setProjects(allProjects);
       } catch (error) {
         console.error("Gagal mengambil data project:", error);
       }

@@ -42,6 +42,126 @@ async function main() {
   }
 
   // Seed Users
+  console.log('👥 Seeding users...');
+  const hashedPassword = await bcrypt.hash('@Test123', 10);
+  const users = [
+    {
+      id: '24a916f3-0a96-4bca-9b15-3c991455d0e6',
+      email: 'mhdulilabshar@example.com',
+      password: hashedPassword,
+      fullName: 'Mhd Ulil Abshar',
+      role: 'MEMBER',
+      divisionId: 'e0b4374f-3403-4e5d-97af-398e0cec468d',
+      created_at: new Date('2025-02-15 11:08:47.742'),
+      updated_at: new Date('2025-04-22 19:37:03.651')
+    },
+    {
+      id: '447384ec-4fe3-4663-9807-5c02cddf07af',
+      email: 'aliefadha@example.com',
+      password: hashedPassword,
+      fullName: 'Alief Adha',
+      role: 'MEMBER',
+      divisionId: 'e0b4374f-3403-4e5d-97af-398e0cec468d',
+      created_at: new Date('2025-02-15 11:09:37.599'),
+      updated_at: new Date('2025-02-17 02:51:55.395')
+    },
+    {
+      id: '48620d76-1a4a-49dc-ad17-50a3a3bf8854',
+      email: 'nadiniannisabyant@example.com',
+      password: hashedPassword,
+      fullName: 'Nadini Annisa Byant',
+      role: 'MEMBER',
+      divisionId: 'e0b4374f-3403-4e5d-97af-398e0cec468d',
+      created_at: new Date('2025-02-15 11:08:30.709'),
+      updated_at: new Date('2025-02-15 11:08:30.709')
+    },
+    {
+      id: '52b3927e-6f55-4dac-9ecc-fc47f10170a3',
+      email: 'iqbaldefriprasetya@example.com',
+      password: hashedPassword,
+      fullName: 'Iqbal Defri Prasetya',
+      role: 'MEMBER',
+      divisionId: 'e0b4374f-3403-4e5d-97af-398e0cec468d',
+      created_at: new Date('2025-02-15 11:08:39.931'),
+      updated_at: new Date('2025-02-15 11:08:39.931')
+    },
+    {
+      id: '54fb284d-d47e-4dd5-a4e7-dc15b4e7e1c5',
+      email: 'hagisirajsumanta@example.com',
+      password: hashedPassword,
+      fullName: 'Hagi Siraj Sumanta',
+      role: 'MEMBER',
+      divisionId: 'bc2c2aeb-74d4-4238-a420-b01fe5e270a5',
+      created_at: new Date('2025-02-15 11:08:08.399'),
+      updated_at: new Date('2025-02-15 11:08:08.399')
+    },
+    {
+      id: '625b80de-1812-40bf-8397-e9d9132ff3eb',
+      email: 'superadmin@gmail.com',
+      password: hashedPassword,
+      fullName: 'Super Admin',
+      role: 'SUPERADMIN',
+      divisionId: null,
+      created_at: new Date('2025-02-13 17:29:22.447'),
+      updated_at: new Date('2025-02-13 17:29:22.447')
+    },
+    {
+      id: '700d9d1e-e177-433c-898c-4db78fdc12dd',
+      email: 'daffarizamuliya@example.com',
+      password: hashedPassword,
+      fullName: 'Daffa Riza Muliya',
+      role: 'MEMBER',
+      divisionId: 'bc2c2aeb-74d4-4238-a420-b01fe5e270a5',
+      created_at: new Date('2025-02-15 11:07:53.390'),
+      updated_at: new Date('2025-02-15 11:07:53.390')
+    },
+    {
+      id: '9637f8d1-8e31-4136-9fa3-7bb6716558b5',
+      email: 'deliciasyifamaghfira@example.com',
+      password: hashedPassword,
+      fullName: 'Delicia Syifa Maghfira',
+      role: 'MEMBER',
+      divisionId: 'e0b4374f-3403-4e5d-97af-398e0cec468d',
+      created_at: new Date('2025-02-15 11:09:50.281'),
+      updated_at: new Date('2025-02-15 11:09:50.281')
+    },
+    {
+      id: 'be4e3112-45fa-44ae-8048-aaeb9b8dd706',
+      email: 'hamzahabdillaharif@example.com',
+      password: hashedPassword,
+      fullName: 'Hamzah Abdillah Arif',
+      role: 'MEMBER',
+      divisionId: 'e0b4374f-3403-4e5d-97af-398e0cec468d',
+      created_at: new Date('2025-02-15 11:09:22.744'),
+      updated_at: new Date('2025-02-15 11:09:22.744')
+    },
+    {
+      id: 'c1744d47-0ce6-4e45-adf1-ed4b13c6e916',
+      email: 'fajaralifriyandi@example.com',
+      password: hashedPassword,
+      fullName: 'Fajar Alif Riyandi',
+      role: 'MEMBER',
+      divisionId: 'e0b4374f-3403-4e5d-97af-398e0cec468d',
+      created_at: new Date('2025-02-15 11:08:57.990'),
+      updated_at: new Date('2025-02-15 11:08:57.990')
+    },
+    {
+      id: 'f7e2f29b-c164-496d-a617-2559b296e1cb',
+      email: 'muhammadfaizabrar@example.com',
+      password: hashedPassword,
+      fullName: 'Muhammad Faiz Abrar',
+      role: 'MEMBER',
+      divisionId: 'bc2c2aeb-74d4-4238-a420-b01fe5e270a5',
+      created_at: new Date('2025-02-15 11:08:21.023'),
+      updated_at: new Date('2025-02-15 11:08:21.023')
+    }
+  ];
+
+  for (const user of users) {
+    await prisma.user.create({
+      data: user
+    });
+  }
 
   // Seed Metrics
   console.log('📊 Seeding metrics...');
@@ -314,8 +434,8 @@ async function main() {
   console.log(`  - ${assessments.length} assessments`);
   console.log('');
   console.log('🔑 Login credentials:');
-  console.log('  Super Admin: superadmin@gmail.com / password');
-  console.log('  All other users: [email] / password');
+  console.log('  Super Admin: superadmin@gmail.com / @Test123');
+  console.log('  All other users: [email] / @Test123');
 }
 
 main()

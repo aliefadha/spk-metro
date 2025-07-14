@@ -11,7 +11,7 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
   const [error, setError] = useState(null);
   const [kpiList, setKpiList] = useState([]);
 
-  // Fetch KPI Metrics based on logged user's division
+  // Fetch KPI Metrics based on logged user's division or selected division
   useEffect(() => {
     const fetchKPI = async () => {
       try {
@@ -21,13 +21,40 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
           return;
         }
 
-        // Fetch KPIs for the logged user's division
-        if (currentUser.divisionId) {
+
+        
+        // If SUPERADMIN and no division selected, don't fetch KPIs
+        if (currentUser.role === 'SUPERADMIN' && !selectedDivision) {
+
+          setKpiList([]);
+          return;
+        } else if (selectedDivision) {
+          // If division is selected, fetch KPIs for that specific division
+
+          const divisionsResponse = await api.get("http://localhost:3000/api/v1/division");
+          const divisions = divisionsResponse.data.data;
+          const targetDivision = divisions.find(d => d.divisionName === selectedDivision);
+          
+          if (targetDivision) {
+            const response = await api.get(
+              `http://localhost:3000/api/v1/metrics/division?divisionId=${targetDivision.id}`
+            );
+
+            setKpiList(response.data.data);
+          } else {
+            setKpiList([]);
+          }
+        } else if (currentUser.divisionId) {
+          // Regular users see KPIs for their division
+
           const response = await api.get(`http://localhost:3000/api/v1/metrics/division?divisionId=${currentUser.divisionId}`);
+
           setKpiList(response.data.data);
         } else {
           // If no divisionId, fetch all KPIs (fallback)
+
           const response = await api.get("http://localhost:3000/api/v1/metrics");
+
           setKpiList(response.data.data);
         }
       } catch (error) {
@@ -37,7 +64,7 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
     };
 
     fetchKPI();
-  }, []);
+  }, [selectedDivision]);
 
   // Fetch logged user's individual KPI Report
   const fetchKPIReport = useCallback(async (month = "") => {
@@ -50,21 +77,33 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
         return;
       }
 
-      // Get user's division information
-      let userDivision = null;
-      if (currentUser.divisionId) {
-        try {
-          const divisionsResponse = await api.get("http://localhost:3000/api/v1/division");
-          const divisions = divisionsResponse.data.data;
-          userDivision = divisions.find(d => d.id === currentUser.divisionId);
-        } catch (error) {
-          console.error("Error fetching division info:", error);
+      // If no division is selected and user is SUPERADMIN, don't show any data
+      if (currentUser?.role === 'SUPERADMIN' && !selectedDivision) {
+
+        setReportData([]);
+        return;
+      }
+
+      // Get division information - either selected division or user's division
+      let targetDivision = null;
+      try {
+        const divisionsResponse = await api.get("http://localhost:3000/api/v1/division");
+        const divisions = divisionsResponse.data.data;
+        
+        if (selectedDivision) {
+          // Use selected division if provided
+          targetDivision = divisions.find(d => d.divisionName === selectedDivision);
+        } else if (currentUser.divisionId) {
+          // Use user's division as fallback
+          targetDivision = divisions.find(d => d.id === currentUser.divisionId);
         }
+      } catch (error) {
+        console.error("Error fetching division info:", error);
       }
 
       let response;
       
-      if (userDivision && userDivision.divisionName === "Developer") {
+      if (targetDivision && targetDivision.divisionName === "Developer") {
           // For Developer division, we need to get all projects and their assessments
           let projectsUrl = "http://localhost:3000/api/v1/projects";
           
@@ -99,20 +138,31 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
             }
           }
           
-          // Filter assessments for the logged user only and calculate weighted scores
-          const userAssessments = {
-            userId: currentUser.id,
-            fullName: currentUser.fullName,
-            assesmentDate: null,
-            metrics: {}
-          };
-
-          // Process only assessments for the current user
-          const currentUserAssessments = allAssessments.filter(assessment => 
-            assessment.userId === currentUser.id
-          );
-
-          currentUserAssessments.forEach(assessment => {
+          // Filter assessments based on user role
+          let filteredAssessments;
+          if (currentUser.role === 'SUPERADMIN') {
+            // SUPERADMIN sees all assessments
+            filteredAssessments = allAssessments;
+          } else {
+            // Regular users see only their own assessments
+            filteredAssessments = allAssessments.filter(assessment => 
+              assessment.userId === currentUser.id
+            );
+          }
+          
+          // Group assessments by user for processing
+          const userAssessmentsMap = {};
+          filteredAssessments.forEach(assessment => {
+            if (!userAssessmentsMap[assessment.userId]) {
+              userAssessmentsMap[assessment.userId] = {
+                userId: assessment.userId,
+                fullName: assessment.fullName,
+                assesmentDate: null,
+                metrics: {}
+              };
+            }
+            
+            const userAssessments = userAssessmentsMap[assessment.userId];
             if (!userAssessments.assesmentDate) {
               userAssessments.assesmentDate = assessment.assesmentDate;
             }
@@ -148,10 +198,10 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
             });
           });
           
-          // Convert to expected format with weighted averages for current user only
+          // Convert to expected format with weighted averages for all users
           let developerData = [];
-          if (currentUserAssessments.length > 0) {
-            developerData = [{
+          if (filteredAssessments.length > 0) {
+            developerData = Object.values(userAssessmentsMap).map(userAssessments => ({
               userId: userAssessments.userId,
               fullName: userAssessments.fullName,
               assesmentDate: userAssessments.assesmentDate,
@@ -170,7 +220,7 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
                   value: 0
                 };
               })
-            }];
+            }));
           }
           
           // Apply client-side month filtering for developer assessments if month is provided
@@ -192,24 +242,63 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
           }
           
           response = { data: { data: developerData } };
-        } else if (userDivision) {
-          // For non-developer divisions, get assessments for the current user only
-          let url = `http://localhost:3000/api/v1/assessments-nondev/division/${userDivision.divisionName}`;
+        } else if (targetDivision) {
+          // For non-developer divisions, get assessments based on user role and selected division
+          let url;
+          if (currentUser.role === 'SUPERADMIN' && !selectedDivision) {
+            // SUPERADMIN with no division selected sees all assessments
+            url = `http://localhost:3000/api/v1/assessments-nondev`;
+          } else {
+            // Use target division (either selected or user's division)
+            url = `http://localhost:3000/api/v1/assessments-nondev/division/${targetDivision.divisionName}`;
+          }
           
           // Add month parameter if provided
           if (month) {
-            url += `?month=${month}`;
+            url += url.includes('?') ? `&month=${month}` : `?month=${month}`;
           }
           
           const allAssessmentsResponse = await api.get(url);
           const allAssessments = allAssessmentsResponse.data.data || [];
           
-          // Filter to only include current user's assessments
-          const currentUserAssessments = allAssessments.filter(assessment => 
-            assessment.userId === currentUser.id
-          );
+          // Filter assessments based on user role
+          let filteredAssessments;
+          if (currentUser.role === 'SUPERADMIN') {
+            // SUPERADMIN sees all assessments
+            filteredAssessments = allAssessments;
+          } else {
+            // Regular users see only their own assessments
+            filteredAssessments = allAssessments.filter(assessment => 
+              assessment.userId === currentUser.id
+            );
+          }
+
           
-          response = { data: { data: currentUserAssessments } };
+          // Convert the backend response format to match expected structure
+
+          const convertedData = filteredAssessments.map(user => {
+
+            // Convert metrics object to metrics array format
+            const metricsArray = kpiList.map(kpi => {
+              // Find metric value by KPI name in the metrics object
+              const metricValue = user.metrics && user.metrics[kpi.kpiName] ? user.metrics[kpi.kpiName] : 0;
+
+              return {
+                metricId: kpi.id,
+                value: metricValue
+              };
+            });
+            
+            return {
+              userId: user.userId,
+              fullName: user.fullName,
+              metrics: metricsArray,
+              assesmentDate: user.assesmentDate || user.created_at
+            };
+          });
+
+          
+          response = { data: { data: convertedData } };
         } else {
           // No division information available
           response = { data: { data: [] } };
@@ -220,7 +309,9 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
           // Create metrics array aligned with the current kpiList order
           const metrics = kpiList.map(kpi => {
             const userMetric = user.metrics.find(m => m.metricId === kpi.id);
-            return userMetric ? userMetric.value : 0;
+            const value = userMetric ? userMetric.value : 0;
+
+            return value;
           });
           
           const totalSkor = metrics.length > 0 
@@ -234,6 +325,7 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
           };
         });
         
+
         setReportData(formattedData);
     } catch (error) {
       console.error("Gagal mengambil data KPI Report:", error);
@@ -254,19 +346,41 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
     if (kpiList.length > 0) {
       fetchKPIReport(selectedMonth);
     }
-  }, [selectedMonth, kpiList, fetchKPIReport]);
+  }, [selectedMonth, selectedDivision, kpiList, fetchKPIReport]);
 
   return (
     <div className="bg-white rounded-lg p-6 mt-8">
-      <div className="flex flex-col sm:flex-row gap-2 mb-6 items-center">
-        <h2 className="text-xl font-semibold mr-3">
-          Laporan KPI Individual Saya
-          {selectedMonth && (
-            <span className="text-sm font-normal text-gray-600 ml-2">
-              - {new Date(selectedMonth + '-01').toLocaleDateString('id-ID', { year: 'numeric', month: 'long' })}
-            </span>
-          )}
-        </h2>
+      <div className="flex flex-col sm:flex-row gap-2 mb-6 items-start">
+        <div className="flex-1">
+          <h2 className="text-xl font-semibold mr-3">
+             {(() => {
+               const currentUser = getUser();
+               if (selectedDivision) {
+                 return `Laporan KPI Divisi ${selectedDivision}`;
+               } else if (currentUser?.role === 'SUPERADMIN') {
+                 return 'Laporan KPI - Pilih Divisi';
+               } else {
+                 return 'Laporan KPI Individual Saya';
+               }
+             })()} 
+             {selectedMonth && (
+               <span className="text-sm font-normal text-gray-600 ml-2">
+                 - {new Date(selectedMonth + '-01').toLocaleDateString('id-ID', { year: 'numeric', month: 'long' })}
+               </span>
+             )}
+           </h2>
+           {(() => {
+             const currentUser = getUser();
+             if (currentUser?.role === 'SUPERADMIN' && !selectedDivision) {
+               return (
+                 <p className="text-sm text-gray-500 mt-1">
+                   Silakan pilih divisi untuk melihat laporan KPI
+                 </p>
+               );
+             }
+             return null;
+           })()}
+        </div>
       </div>
 
       {/* Table */}
@@ -275,61 +389,75 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
           <p className="text-center">Memuat data...</p>
         ) : error ? (
           <p className="text-center text-red-500">{error}</p>
-        ) : (
-          <table className="w-full" style={{ fontSize: "12px" }}>
-            <thead>
-              <tr className="bg-purple-50">
-                <th className="px-4 py-3 text-left text-primer">Nama Member</th>
-                {kpiList.map((kpi) => (
-                  <th key={kpi.id} className="px-4 py-3 text-center text-primer">
-                    {kpi.kpiName}
+        ) : (() => {
+          const currentUser = getUser();
+          if (currentUser?.role === 'SUPERADMIN' && !selectedDivision) {
+            return (
+              <div className="text-center py-8">
+                <div className="flex flex-col items-center gap-2">
+                  <FileText className="w-12 h-12 text-gray-300" />
+                  <p className="text-gray-500">Pilih divisi terlebih dahulu untuk melihat laporan KPI</p>
+                </div>
+              </div>
+            );
+          }
+          
+          return (
+            <table className="w-full" style={{ fontSize: "12px" }}>
+              <thead>
+                <tr className="bg-purple-50">
+                  <th className="px-4 py-3 text-left text-primer">Nama Member</th>
+                  {kpiList.map((kpi) => (
+                    <th key={kpi.id} className="px-4 py-3 text-center text-primer">
+                      {kpi.kpiName}
+                    </th>
+                  ))}
+                  <th className="px-4 py-3 text-center text-primer">
+                    Average Skor
                   </th>
-                ))}
-                <th className="px-4 py-3 text-center text-primer">
-                  Average Skor
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {kpiList.length === 0 ? (
-                <tr>
-                  <td colSpan="3" className="text-center py-8 text-gray-500">
-                    <div className="flex flex-col items-center gap-2">
-                      <FileText className="w-12 h-12 text-gray-300" />
-                      <p>Tidak ada KPI untuk divisi Anda</p>
-                      <p className="text-sm">Silakan hubungi admin untuk menambahkan KPI</p>
-                    </div>
-                  </td>
                 </tr>
-              ) : reportData.length === 0 ? (
-                <tr>
-                  <td colSpan={kpiList.length + 2} className="text-center py-8 text-gray-500">
-                    <div className="flex flex-col items-center gap-2">
-                      <FileText className="w-12 h-12 text-gray-300" />
-                      <p>Tidak ada data assessment untuk Anda</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                reportData.map((row, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="px-4 py-3">{row.fullName}</td>
-                    {row.metrics.map((value, idx) => (
-                      <td
-                        key={idx}
-                        className="px-4 py-3"
-                        style={{ textAlign: "center" }}
-                      >
-                        {value}
-                      </td>
-                    ))}
-                    <td className="text-center px-4 py-3">{row.totalSkor}</td>
+              </thead>
+              <tbody>
+                {kpiList.length === 0 ? (
+                  <tr>
+                    <td colSpan="3" className="text-center py-8 text-gray-500">
+                      <div className="flex flex-col items-center gap-2">
+                        <FileText className="w-12 h-12 text-gray-300" />
+                        <p>Tidak ada KPI untuk divisi Anda</p>
+                        <p className="text-sm">Silakan hubungi admin untuk menambahkan KPI</p>
+                      </div>
+                    </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        )}
+                ) : reportData.length === 0 ? (
+                  <tr>
+                    <td colSpan={kpiList.length + 2} className="text-center py-8 text-gray-500">
+                      <div className="flex flex-col items-center gap-2">
+                        <FileText className="w-12 h-12 text-gray-300" />
+                        <p>Tidak ada data assessment untuk Anda</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  reportData.map((row, index) => (
+                    <tr key={index} className="border-b">
+                      <td className="px-4 py-3">{row.fullName}</td>
+                      {row.metrics.map((value, idx) => (
+                        <td
+                          key={idx}
+                          className="px-4 py-3"
+                          style={{ textAlign: "center" }}
+                        >
+                          {value}
+                        </td>
+                      ))}
+                      <td className="text-center px-4 py-3">{row.totalSkor}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          );
+        })()}
       </div>
 
     </div>
