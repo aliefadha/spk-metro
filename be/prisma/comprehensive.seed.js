@@ -26,12 +26,10 @@ async function main() {
     {
       id: 'bc2c2aeb-74d4-4238-a420-b01fe5e270a5',
       divisionName: 'Marketing',
-      totalMember: 3
     },
     {
       id: 'e0b4374f-3403-4e5d-97af-398e0cec468d',
       divisionName: 'Developer',
-      totalMember: 7
     }
   ];
 
@@ -174,8 +172,30 @@ async function main() {
       bobot: 5.0,
       char: 'Benefit',
       divisionId: 'e0b4374f-3403-4e5d-97af-398e0cec468d',
-      created_at: new Date('2025-02-15 10:36:52.204'),
+      created_at: new Date('2025-02-15 10:30:00.000'),
       updated_at: new Date('2025-05-13 09:27:57.497')
+    },
+    {
+      id: 'f37e9484-183e-47f1-90c6-fc30e0be0036',
+      kodeKpi: 'K002',
+      kpiName: 'Change Failure Rate (CFR)',
+      target: 85.0,
+      bobot: 5.0,
+      char: 'Cost',
+      divisionId: 'e0b4374f-3403-4e5d-97af-398e0cec468d',
+      created_at: new Date('2025-02-15 10:31:00.000'),
+      updated_at: new Date('2025-05-13 09:28:15.277')
+    },
+    {
+      id: 'bd894298-8249-445f-ade8-f9feaf87ba6c',
+      kodeKpi: 'K003',
+      kpiName: 'Code Quality',
+      target: 85.0,
+      bobot: 5.0,
+      char: 'Benefit',
+      divisionId: 'e0b4374f-3403-4e5d-97af-398e0cec468d',
+      created_at: new Date('2025-02-15 10:32:00.000'),
+      updated_at: new Date('2025-05-13 09:28:10.746')
     },
     {
       id: '24d540f9-777d-4938-a2fb-a4dc042f07b4',
@@ -185,7 +205,7 @@ async function main() {
       bobot: 5.0,
       char: 'Benefit',
       divisionId: 'e0b4374f-3403-4e5d-97af-398e0cec468d',
-      created_at: new Date('2025-02-15 10:43:46.505'),
+      created_at: new Date('2025-02-15 10:33:00.000'),
       updated_at: new Date('2025-05-13 09:28:02.140')
     },
     {
@@ -196,31 +216,9 @@ async function main() {
       bobot: 5.0,
       char: 'Benefit',
       divisionId: 'e0b4374f-3403-4e5d-97af-398e0cec468d',
-      created_at: new Date('2025-02-15 10:44:24.428'),
+      created_at: new Date('2025-02-15 10:34:00.000'),
       updated_at: new Date('2025-05-13 09:28:06.730')
     },
-    {
-      id: 'bd894298-8249-445f-ade8-f9feaf87ba6c',
-      kodeKpi: 'K003',
-      kpiName: 'Code Quality',
-      target: 85.0,
-      bobot: 5.0,
-      char: 'Benefit',
-      divisionId: 'e0b4374f-3403-4e5d-97af-398e0cec468d',
-      created_at: new Date('2025-02-15 10:43:11.980'),
-      updated_at: new Date('2025-05-13 09:28:10.746')
-    },
-    {
-      id: 'f37e9484-183e-47f1-90c6-fc30e0be0036',
-      kodeKpi: 'K002',
-      kpiName: 'Change Failure Rate (CFR)',
-      target: 85.0,
-      bobot: 5.0,
-      char: 'Cost',
-      divisionId: 'e0b4374f-3403-4e5d-97af-398e0cec468d',
-      created_at: new Date('2025-02-15 10:42:16.655'),
-      updated_at: new Date('2025-05-13 09:28:15.277')
-    }
   ];
 
   for (const metric of metrics) {

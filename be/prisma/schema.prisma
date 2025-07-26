@@ -159,9 +159,10 @@ model assesmentResult {
 }
 
 model division {
-  id           String @id @default(uuid())
-  divisionName String @unique
-  totalMember  Int    @default(0)
+  id           String   @id @default(uuid())
+  divisionName String   @unique
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
   user         user[]
 }
 

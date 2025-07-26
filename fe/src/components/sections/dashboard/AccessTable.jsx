@@ -34,7 +34,6 @@ const AccessTable = () => {
         <table className="w-full">
           <thead>
             <tr className="bg-purple-50 text-left">
-              <th className="px-4 py-3 text-primer">No</th>
               <th className="px-4 py-3 text-primer">Nama Lengkap</th>
               <th className="px-4 py-3 text-primer">Email</th>
               <th className="px-4 py-3 text-primer">Level</th>
@@ -48,11 +47,8 @@ const AccessTable = () => {
                 </td>
               </tr>
             ) : (
-              data.map((user, index) => (
+              data.map((user) => (
                 <tr key={user.email} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-3">
-                    {String(index + 1).padStart(2, "0")}
-                  </td>
                   <td className="px-4 py-3">{user.fullName}</td>
                   <td className="px-4 py-3">{user.email}</td>
                   <td className="px-4 py-3">

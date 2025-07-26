@@ -9,16 +9,20 @@ const MemberTable = () => {
   const [isEditing, setIsEditing] = useState(null);
   const [editValues, setEditValues] = useState({
     fullName: "",
-    divisionId: "",
   });
   const [showModal, setShowModal] = useState(false);
   const [fullName, setFullName] = useState("");
   const [selectedDivision, setSelectedDivision] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+
 
   const fetchData = async () => {
     try {
-      const response = await api.get("http://localhost:3000/api/v1/member");
-      setData(response.data.data);
+      const response = await api.get("/v1/member");
+      setData(response.data.data || []);
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -28,14 +32,20 @@ const MemberTable = () => {
     }
   };
 
+  const fetchDivisions = async () => {
+    try {
+      const response = await api.get("/v1/division");
+      if (!response.data.error) {
+        setDivisions(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching divisions:", error);
+    }
+  };
+
   useEffect(() => {
     fetchData();
-    fetch("http://localhost:3000/api/v1/division")
-      .then((response) => response.json())
-      .then((data) => {
-        if (!data.error) setDivisions(data.data);
-      })
-      .catch((error) => console.error("Error fetching divisions:", error));
+    fetchDivisions();
   }, []);
 
   const handleEdit = (id, fullName, divisionId) => {
@@ -50,8 +60,9 @@ const MemberTable = () => {
 
   const handleSave = async (id) => {
     try {
-      await api.put(`http://localhost:3000/api/v1/member/${id}`, editValues);
-      fetchData();
+      await api.put(`/v1/member/${id}`, editValues);
+      await fetchData();
+      setIsEditing(null);
       Swal.fire({
         icon: "success",
         title: "Berhasil!",
@@ -60,16 +71,39 @@ const MemberTable = () => {
         showConfirmButton: false,
       });
     } catch (error) {
+      setIsEditing(null);
       Swal.fire({
         icon: "error",
         title: "Gagal Menyimpan Perubahan",
         text: error.response?.data?.message || "Terjadi kesalahan.",
       });
     }
-    setIsEditing(null);
   };
 
   const handleDelete = async (id) => {
+    console.log('🔥 DELETE TRIGGERED:', {
+      id,
+      deletingId,
+      isLoading,
+      itemExists: !!data.find(item => item.id === id),
+      dataLength: data.length,
+      timestamp: new Date().toISOString()
+    });
+    
+    if (deletingId === id || isLoading || !data.find(item => item.id === id)) {
+      console.log('🚫 DELETE BLOCKED:', {
+        reason: deletingId === id ? 'Already deleting' : 
+                isLoading ? 'Loading in progress' : 
+                'Item not found',
+        deletingId,
+        isLoading,
+        itemExists: !!data.find(item => item.id === id)
+      });
+      return;
+    }
+    
+    console.log('✅ DELETE PROCEEDING with confirmation dialog');
+    
     const confirm = await Swal.fire({
       title: "Yakin ingin menghapus member ini?",
       text: "Data yang dihapus tidak bisa dikembalikan!",
@@ -79,24 +113,70 @@ const MemberTable = () => {
       cancelButtonText: "Batal",
     });
 
+    console.log('📋 CONFIRMATION RESULT:', confirm.isConfirmed);
+
     if (confirm.isConfirmed) {
+      console.log('🎯 STARTING DELETE PROCESS for ID:', id);
+      setDeletingId(id);
+      setIsLoading(true);
+      
+      // Optimistic update: immediately remove from UI
+      const originalData = [...data];
+      console.log('💾 BACKUP DATA:', originalData.length, 'items');
+      setData(prevData => prevData.filter(item => item.id !== id));
+      console.log('🗑️ OPTIMISTIC UPDATE: Removed item from UI');
+      
       try {
-        await api.delete(`http://localhost:3000/api/v1/member/${id}`);
+        console.log('🌐 API DELETE REQUEST for ID:', id);
+        const deleteResponse = await api.delete(`/v1/member/${id}`);
+        console.log('✅ API DELETE SUCCESS:', deleteResponse.status);
+        
+        // Force component re-render
+        setRefreshKey(prev => {
+          const newKey = prev + 1;
+          console.log('🔄 REFRESH KEY UPDATE:', prev, '->', newKey);
+          return newKey;
+        });
+        
+        // Fetch fresh data to ensure consistency
+        console.log('📥 FETCHING FRESH DATA...');
+        await fetchData();
+        console.log('📥 FRESH DATA FETCHED');
+        
+        console.log('🎉 SHOWING SUCCESS MESSAGE');
         Swal.fire({
           icon: "success",
           title: "Berhasil!",
           text: "Member berhasil dihapus.",
-          timer: 2000,
+          timer: 1500,
           showConfirmButton: false,
+          allowOutsideClick: false,
+          allowEscapeKey: false
         });
-        fetchData();
       } catch (error) {
+        console.error('❌ DELETE ERROR:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+          id
+        });
+        
+        console.log('🔄 REVERTING OPTIMISTIC UPDATE');
+        setData(originalData);
+        
         Swal.fire({
           icon: "error",
           title: "Gagal Menghapus",
           text: error.response?.data?.message || "Terjadi kesalahan.",
         });
+      } finally {
+        console.log('🧹 CLEANUP: Resetting states');
+        setDeletingId(null);
+        setIsLoading(false);
+        console.log('✨ DELETE PROCESS COMPLETED for ID:', id);
       }
+    } else {
+      console.log('❌ DELETE CANCELLED by user');
     }
   };
 
@@ -114,19 +194,21 @@ const MemberTable = () => {
     }
 
     try {
-      await api.post("http://localhost:3000/api/v1/member", {
+      await api.post("/v1/member", {
         fullName,
         divisionId: selectedDivision,
       });
+      await fetchData();
+      handleModal();
+      setFullName("");
+      setSelectedDivision("");
       Swal.fire({
         icon: "success",
         title: "Berhasil!",
         text: "Member berhasil ditambahkan!",
+        timer: 2000,
+        showConfirmButton: false,
       });
-      fetchData();
-      handleModal();
-      setFullName("");
-      setSelectedDivision("");
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -148,7 +230,7 @@ const MemberTable = () => {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table key={refreshKey} className="w-full">
           <thead>
             <tr className="bg-purple-50">
               <th className="px-4 py-3 text-left text-primer">Nomor Member</th>
@@ -159,6 +241,7 @@ const MemberTable = () => {
           </thead>
           <tbody>
             {data
+              .filter(row => row && row.id) // Safety filter
               .map((row, index) => (
                 <tr key={row.id} className="border-b">
                   <td className="px-4 py-3">#00{index + 1}</td>
@@ -217,8 +300,11 @@ const MemberTable = () => {
                         </button>
                       )}
                       <button
-                        className="p-1 hover:text-red-600"
+                        className={`p-1 hover:text-red-600 ${
+                          deletingId === row.id ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
                         onClick={() => handleDelete(row.id)}
+                        disabled={deletingId === row.id || isLoading}
                       >
                         <Trash2 className="w-5 h-5 text-red-500" />
                       </button>

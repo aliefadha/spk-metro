@@ -357,6 +357,8 @@ const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
                       {isEditing === item.userId ? (
                         <input
                           type="number"
+                          min={0}
+                          max={100}
                           value={editValues[kpi.id] || ""}
                           onChange={(e) =>
                             handleEditChange(kpi.id, e.target.value)

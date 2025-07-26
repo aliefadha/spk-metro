@@ -118,7 +118,6 @@ const ProjectTable = ({ selectedMonth }) => {
       projectName: formData.projectName,
       bobot: parseFloat(formData.bobot),
       deadline: formData.deadline,
-      tanggal_selesai: formData.tanggal_selesai || null,
       status: formData.status,
       projectCollaborator,
     };
@@ -132,7 +131,6 @@ const ProjectTable = ({ selectedMonth }) => {
         projectName: "",
         bobot: "",
         deadline: "",
-        tanggal_selesai: "",
         status: "BACKLOG",
         projectManager: "",
       });
@@ -285,10 +283,10 @@ const ProjectTable = ({ selectedMonth }) => {
               <th className="px-4 py-3 text-left text-primer">Nama Proyek</th>
               <th className="px-4 py-3 text-left text-primer">Bobot</th>
               <th className="px-4 py-3 text-left text-primer">Deadline</th>
-              <th className="px-4 py-3 text-left text-primer">Tanggal Selesai</th>
               <th className="px-4 py-3 text-left text-primer">PM</th>
               <th className="px-4 py-3 text-left text-primer">Anggota</th>
               <th className="px-4 py-3 text-left text-primer">Status</th>
+              <th className="px-4 py-3 text-left text-primer">Tanggal Selesai</th>
               <th className="px-4 py-3 text-left text-primer">Aksi</th>
             </tr>
           </thead>
@@ -318,6 +316,7 @@ const ProjectTable = ({ selectedMonth }) => {
                       name="bobot"
                       step="0.1"
                       min="0"
+                      max="5"
                       value={editValues.bobot}
                       onChange={handleEditChange}
                       className="w-full border p-1 rounded"
@@ -339,21 +338,6 @@ const ProjectTable = ({ selectedMonth }) => {
                     />
                   ) : (
                     row.deadline
-                  )}
-                </td>
-
-                {/* Tanggal Selesai */}
-                <td className="px-4 py-3">
-                  {isEditing === row.id ? (
-                    <input
-                      type="date"
-                      name="tanggal_selesai"
-                      value={editValues.tanggal_selesai}
-                      onChange={handleEditChange}
-                      className="w-full border p-1 rounded"
-                    />
-                  ) : (
-                    row.tanggal_selesai || "-"
                   )}
                 </td>
 
@@ -426,6 +410,24 @@ const ProjectTable = ({ selectedMonth }) => {
                   )}
                 </td>
 
+                {/* Tanggal Selesai */}
+                <td className="px-4 py-3">
+                  {isEditing === row.id ? (
+                    <input
+                      type="date"
+                      name="tanggal_selesai"
+                      value={editValues.tanggal_selesai}
+                      onChange={handleEditChange}
+                      className={`w-full border p-1 rounded ${
+                        editValues.status !== 'DONE' ? 'bg-gray-100' : ''
+                      }`}
+                      disabled={editValues.status !== 'DONE'}
+                    />
+                  ) : (
+                    row.tanggal_selesai || "-"
+                  )}
+                </td>
+
                 {/* Aksi */}
                 <td className="px-4 py-3">
                   <div className="flex space-x-4">
@@ -492,7 +494,7 @@ const ProjectTable = ({ selectedMonth }) => {
                   type="number"
                   step="0.1"
                   min="0"
-                  max="10"
+                  max="5"
                   name="bobot"
                   className="w-full border p-2 rounded-md"
                   onChange={handleChange}
@@ -506,15 +508,6 @@ const ProjectTable = ({ selectedMonth }) => {
                   className="w-full border p-2 rounded-md"
                   onChange={handleChange}
                   required
-                />
-              </div>
-              <div className="mb-4 flex items-center">
-                <label className="w-1/3 text-sm font-medium">Tanggal Selesai</label>
-                <input
-                  type="date"
-                  name="tanggal_selesai"
-                  className="w-full border p-2 rounded-md"
-                  onChange={handleChange}
                 />
               </div>
               <div className="mb-4 flex items-center">

@@ -19,7 +19,6 @@ const TableKPI = ({ divisionId, divisionName }) => {
   const handleModal = () => setShowModal(!showModal);
 
   // State untuk form tambah
-  const [kodeKpi, setkodeKPI] = useState("");
   const [kpiName, setkpiName] = useState("");
   const [target, settarget] = useState("");
   const [bobot, setBobot] = useState("");
@@ -31,12 +30,12 @@ const TableKPI = ({ divisionId, divisionName }) => {
     try {
       let url = "http://localhost:3000/api/v1/metrics";
       
-      // If divisionId is provided, use division-specific endpoint
       if (divisionId) {
         url = `http://localhost:3000/api/v1/metrics/division?divisionId=${divisionId}`;
       }
       
       const response = await api.get(url);
+
       setData(response.data.data);
     } catch (error) {
       console.error("Gagal memuat data:", error);
@@ -146,10 +145,6 @@ const TableKPI = ({ divisionId, divisionName }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!kodeKpi.trim()) {
-      newErrors.kodeKpi = "Kode KPI wajib diisi";
-    }
-
     if (!kpiName.trim()) {
       newErrors.kpiName = "Nama KPI wajib diisi";
     }
@@ -186,7 +181,6 @@ const TableKPI = ({ divisionId, divisionName }) => {
 
     try {
       const response = await api.post("http://localhost:3000/api/v1/metrics", {
-        kodeKpi,
         kpiName,
         target: parseFloat(target),
         bobot: parseFloat(bobot),
@@ -202,7 +196,6 @@ const TableKPI = ({ divisionId, divisionName }) => {
         });
         fetchData();
         handleModal();
-        setkodeKPI("");
         setkpiName("");
         settarget("");
         setBobot("");
@@ -242,12 +235,11 @@ const TableKPI = ({ divisionId, divisionName }) => {
       </div>
 
       {/* Table */}
-      {divisionId && (
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-purple-50">
-                <th className="px-4 py-3 text-left text-primer">Kode KPI</th>
+                <th className="px-4 py-3 text-left text-primer">ID KPI</th>
                 <th className="px-4 py-3 text-left text-primer">Nama KPI </th>
                 <th className="px-4 py-3 text-left text-primer">Karakteristik</th>
                 <th className="px-4 py-3 text-left text-primer">Bobot</th>
@@ -265,7 +257,8 @@ const TableKPI = ({ divisionId, divisionName }) => {
                         name="kodeKpi"
                         value={editValues.kodeKpi}
                         onChange={handleEditChange}
-                        className="w-full border p-1 rounded"
+                        className="w-full border p-1 rounded bg-gray-100"
+                        disabled
                       />
                     ) : (
                       row.kodeKpi
@@ -365,7 +358,6 @@ const TableKPI = ({ divisionId, divisionName }) => {
             </tbody>
           </table>
         </div>
-      )}
 
       {/* Modal */}
       {showModal && (
@@ -388,22 +380,6 @@ const TableKPI = ({ divisionId, divisionName }) => {
             )}
 
             <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium">
-                  Kode KPI*
-                </label>
-                <input
-                  type="text"
-                  value={kodeKpi}
-                  onChange={(e) => setkodeKPI(e.target.value)}
-                  className={`w-full border p-2 rounded-md ${
-                    errors.kodeKpi ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
-                {errors.kodeKpi && (
-                  <p className="text-red-500 text-sm mt-1">{errors.kodeKpi}</p>
-                )}
-              </div>
 
               <div className="mb-4">
                 <label className="block mb-2 text-sm font-medium">

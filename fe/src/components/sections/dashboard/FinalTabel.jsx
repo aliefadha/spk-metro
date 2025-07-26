@@ -3,11 +3,9 @@ import api from "@/utils/axios";
 import Swal from "sweetalert2";
 
 const FinalTabel = () => {
-  // Fixed to Developer division only
-  const selectedDivision = "Developer";
   const [kpiList, setKpiList] = useState([]);
-  const [normalizedData, setNormalizedData] = useState([]);
-  const [siRiData, setSiRiData] = useState([]);
+  const [normalizedData, setNormalizedData] = useState([]); // eslint-disable-line no-unused-vars
+  const [siRiData, setSiRiData] = useState([]); // eslint-disable-line no-unused-vars
   const [vikorResult, setVikorResult] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -99,7 +97,7 @@ const FinalTabel = () => {
           };
         }
         
-        // Calculate weighted scores for each metric
+        // Store raw metric values without calculation
         assessment.metrics.forEach(metric => {
           if (!userAssessments[assessment.userId].metrics[metric.metricId]) {
             userAssessments[assessment.userId].metrics[metric.metricId] = {
@@ -108,41 +106,24 @@ const FinalTabel = () => {
             };
           }
           
-          // Find the KPI to get target and char for skorAkhir calculation
-          const kpi = kpiList.find(k => k.id === metric.metricId);
-          if (kpi && kpi.target && metric.value !== 0) {
-            const actual = metric.value;
-            const target = kpi.target;
-            let skorAkhir = 0;
-            
-            // Calculate skorAkhir based on characteristic
-            if (kpi.char === 'Benefit') {
-              skorAkhir = (actual / target) * 100;
-            } else if (kpi.char === 'Cost') {
-              skorAkhir = (target / actual) * 100;
-            }
-            
-            // Add weighted score: skorAkhir * project.bobot
-            const weightedScore = skorAkhir * assessment.projectBobot;
-            userAssessments[assessment.userId].metrics[metric.metricId].totalWeightedScore += weightedScore;
-            userAssessments[assessment.userId].metrics[metric.metricId].totalWeight += assessment.projectBobot;
-          }
+          // Use raw metric value directly
+          userAssessments[assessment.userId].metrics[metric.metricId].totalWeightedScore += metric.value;
+          userAssessments[assessment.userId].metrics[metric.metricId].totalWeight += 1;
         });
       });
       
-      // Convert to expected format with weighted averages
+      // Convert to expected format
       const developerData = Object.values(userAssessments).map(user => ({
         userId: user.userId,
         fullName: user.fullName,
         assesmentDate: user.assesmentDate,
         metrics: kpiList.map(kpi => {
           const metricData = user.metrics[kpi.id];
-          if (metricData && metricData.totalWeight > 0) {
-            // Calculate weighted average: sum(skorAkhir * bobot) / sum(bobot)
-            const weightedAverage = metricData.totalWeightedScore / metricData.totalWeight;
+          if (metricData && metricData.totalWeightedScore) {
+            // Use raw totalWeightedScore without any calculation
             return {
               metricId: kpi.id,
-              value: Math.round(weightedAverage * 100) / 100 // Round to 2 decimal places
+              value: metricData.totalWeightedScore
             };
           }
           return {
@@ -168,23 +149,6 @@ const FinalTabel = () => {
       
       setReportData(formattedData);
       
-      // Calculate Si and Ri from matriks keputusan data
-      const calculatedSiRi = formattedData.map(user => {
-        // Si = sum of all metrics for the user
-        const si = user.metrics.reduce((sum, value) => sum + value, 0);
-        
-        // Ri = maximum value among metrics for the user
-        const ri = Math.max(...user.metrics);
-        
-        return {
-          fullName: user.fullName,
-          Si: Math.round(si * 100) / 100, // Round to 2 decimal places
-          Ri: Math.round(ri * 100) / 100  // Round to 2 decimal places
-        };
-      });
-      
-      setSiRiData(calculatedSiRi);
-      
       // Calculate normalized matrix from matriks keputusan data
       const normalizedMatrix = formattedData.map(user => {
         const normalizedValues = user.metrics.map((value, metricIndex) => {
@@ -203,16 +167,16 @@ const FinalTabel = () => {
           let normalizedValue;
           if (kpi.char === 'Benefit') {
             // For benefit criteria: higher is better
-            normalizedValue = (value - minValue) / (maxValue - minValue);
+            normalizedValue = (maxValue - value) / (maxValue - minValue);
           } else if (kpi.char === 'Cost') {
             // For cost criteria: lower is better
-            normalizedValue = (maxValue - value) / (maxValue - minValue);
+            normalizedValue = (value - minValue) / (maxValue - minValue);
           } else {
             // Default to benefit if char is not specified
             normalizedValue = (value - minValue) / (maxValue - minValue);
           }
           
-          return Math.round(normalizedValue * 10000) / 10000; // Round to 4 decimal places
+          return Math.round(normalizedValue * 1000) / 1000; // Round to 3 decimal places
         });
         
         return {
@@ -222,6 +186,37 @@ const FinalTabel = () => {
       });
       
       setNormalizedData(normalizedMatrix);
+
+      // Calculate and log sum of all weights
+      const totalWeight = kpiList.reduce((sum, kpi) => sum + parseFloat(kpi.bobot), 0);
+      
+      const calculatedSiRi = normalizedMatrix.map(user => {
+        
+        // Si = Σ(wj/totalWeight * rij) - weighted sum using normalized values
+        const si = user.values.reduce((sum, value, index) => {
+          const weight = parseFloat(kpiList[index].bobot);
+          const normalizedWeight = weight / totalWeight;
+          const weightedValue = normalizedWeight * value;
+          return sum + weightedValue;
+        }, 0);
+        
+        
+        // Ri = max(wj/totalWeight * rij) - weighted maximum using normalized values
+        const ri = Math.max(...user.values.map((value, index) => {
+          const weight = parseFloat(kpiList[index].bobot);
+          const normalizedWeight = weight / totalWeight;
+          const weightedValue = normalizedWeight * value;
+          return weightedValue;
+        }));
+        
+        return {
+          fullName: user.fullName,
+          Si: Math.round(si * 1000) / 1000, // Round to 3 decimal places
+          Ri: Math.round(ri * 1000) / 1000
+        };
+      });
+      
+      setSiRiData(calculatedSiRi);
       
       // Calculate Qi values using VIKOR method
       const calculatedQi = calculatedSiRi.map(user => {
@@ -246,7 +241,7 @@ const FinalTabel = () => {
         
         return {
           fullName: user.fullName,
-          Qi: Math.round(qi * 10000) / 10000 // Round to 4 decimal places
+          Qi: Math.round(qi * 1000) / 1000 // Round to 3 decimal places
         };
       });
       
@@ -281,44 +276,7 @@ const FinalTabel = () => {
     }
   }, [kpiList, fetchKPIReport]);
 
-  const renderMetricTable = (data) => (
-    <table className="w-full" style={{ fontSize: "12px" }}>
-      <thead>
-        <tr className="bg-purple-50">
-          <th className="px-4 py-3 text-left text-primer">Nama Member</th>
-          {kpiList.map((kpi) => (
-            <th key={kpi.id} className="px-4 py-3 text-left text-primer">
-              {kpi.kpiName}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {data.length > 0 ? (
-          data.map((row, index) => (
-            <tr key={index} className="border-b">
-              <td className="px-4 py-3">{row.fullName}</td>
-              {row.values.map((value, idx) => (
-                <td
-                  key={idx}
-                  className="px-4 py-3"
-                  style={{ textAlign: "center" }}
-                >
-                  {value}
-                </td>
-              ))}
-            </tr>
-          ))
-        ) : (
-          <tr>
-            <td colSpan="6" className="text-center py-4">
-              Tidak ada data.
-            </td>
-          </tr>
-        )}
-      </tbody>
-    </table>
-  );
+
 
   return (
     <div className="bg-white rounded-lg p-6 mt-8">
@@ -337,32 +295,49 @@ const FinalTabel = () => {
             <p>Tidak ada data assessment untuk divisi Developer</p>
           </div>
         ) : (
-          <table className="w-full" style={{ fontSize: "12px" }}>
-            <thead>
-              <tr className="bg-purple-50">
-                <th className="px-4 py-3 text-left text-primer">Nama Member</th>
-                <th className="px-4 py-3 text-left text-primer">Qi</th>
-                <th className="px-4 py-3 text-left text-primer">Rank</th>
-              </tr>
-            </thead>
-            <tbody>
-              {vikorResult.length > 0 ? (
-                vikorResult.map((row, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="px-4 py-3">{row.fullName}</td>
-                    <td className="px-4 py-3 text-left">{row.Qi}</td>
-                    <td className="px-4 py-3 text-left">{row.rank}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="3" className="text-center py-4">
-                    Tidak ada data.
-                  </td>
+          <div>
+            <table className="w-full" style={{ fontSize: "12px" }}>
+              <thead>
+                <tr className="bg-purple-50">
+                  <th className="px-4 py-3 text-left text-primer">Nama Member</th>
+                  <th className="px-4 py-3 text-left text-primer">Qi</th>
+                  <th className="px-4 py-3 text-left text-primer">Rank</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {vikorResult.length > 0 ? (
+                  vikorResult.map((row, index) => (
+                    <tr key={index} className="border-b">
+                      <td className="px-4 py-3">{row.fullName}</td>
+                      <td className="px-4 py-3 text-left">{row.Qi}</td>
+                      <td className="px-4 py-3 text-left">{row.rank}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="3" className="text-center py-4">
+                      Tidak ada data.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+            {vikorResult.length > 0 && (
+              <div className="mt-6">
+                <div
+                  className="bg-primer text-white p-4 rounded-lg"
+                  style={{
+                    backgroundColor: "#7E0EFF",
+                    borderRadius: "10px",
+                  }}
+                >
+                  <h2 className="text-lg font-semibold">
+                    Selamat, {vikorResult[0]?.fullName} mendapat promosi dan kesempatan untuk menjadi PM di Next Project!
+                  </h2>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

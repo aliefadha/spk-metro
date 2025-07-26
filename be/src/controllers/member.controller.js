@@ -8,82 +8,77 @@ const memberController = {
     const hashedPassword = await encryptPassword("@Test123");
 
     if (!fullName || !divisionId) {
-        return res.status(400).json({
-            error: true,
-            message: "Nama dan Divisi wajib diisi.",
-        });
-    }
-
-    try {
-        const newMember = await prisma.user.create({
-            data: {
-                fullName,
-                email: `${fullName.toLowerCase().replace(/\s/g, "")}@example.com`,
-                password: hashedPassword,
-                role: "MEMBER",
-                divisionId,
-            },
-        });
-
-        await prisma.division.update({
-            where: { id: divisionId },
-            data: { totalMember: { increment: 1 } }, 
-        });
-
-        res.status(201).json({
-            error: false,
-            message: "Member created successfully",
-            data: newMember,
-        });
-    } catch (error) {
-        res.status(500).json({
-            error: true,
-            message: "Gagal menambahkan member",
-            errorDetail: error.message,
-        });
-    }
-},
-
- // Update a member
- updateMember: async (req, res) => {
-  const { id } = req.params;
-  const { fullName, divisionId } = req.body;
-
-  try {
-    const member = await prisma.user.findUnique({ where: { id } });
-    if (!member) {
-      return res.status(404).json({
+      return res.status(400).json({
         error: true,
-        message: "Member tidak ditemukan.",
+        message: "Nama dan Divisi wajib diisi.",
       });
     }
 
-    const updatedMember = await prisma.user.update({
-      where: { id },
-      data: { fullName, divisionId },
-    });
+    try {
+      const newMember = await prisma.user.create({
+        data: {
+          fullName,
+          email: `${fullName.toLowerCase().replace(/\s/g, "")}@example.com`,
+          password: hashedPassword,
+          role: "MEMBER",
+          divisionId,
+        },
+      });
 
-    res.status(200).json({
-      error: false,
-      message: "Member updated successfully",
-      data: updatedMember,
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: true,
-      message: "Gagal mengupdate member",
-      errorDetail: error.message,
-    });
-  }
-},
+      res.status(201).json({
+        error: false,
+        message: "Member created successfully",
+        data: newMember,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: true,
+        message: "Gagal menambahkan member",
+        errorDetail: error.message,
+      });
+    }
+  },
+
+  // Update a member
+  updateMember: async (req, res) => {
+    const { id } = req.params;
+    const { fullName, divisionId } = req.body;
+
+    try {
+      const member = await prisma.user.findUnique({ where: { id } });
+      if (!member) {
+        return res.status(404).json({
+          error: true,
+          message: "Member tidak ditemukan.",
+        });
+      }
+
+      const updatedMember = await prisma.user.update({
+        where: { id },
+        data: { fullName, divisionId },
+      });
+
+      res.status(200).json({
+        error: false,
+        message: "Member updated successfully",
+        data: updatedMember,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: true,
+        message: "Gagal mengupdate member",
+        errorDetail: error.message,
+      });
+    }
+  },
 
   // Get all members
   getAllMembers: async (req, res) => {
     try {
       const { division } = req.query;
-      
+
       let whereClause = { role: "MEMBER" };
-      
+
       if (division) {
         whereClause = {
           ...whereClause,
@@ -100,6 +95,9 @@ const memberController = {
             select: { divisionName: true },
           },
         },
+        orderBy: {
+          created_at: 'asc'
+        }
       });
 
       // Format respons biar lebih rapi
@@ -130,11 +128,13 @@ const memberController = {
 
   // Delete a member
   deleteMember: async (req, res) => {
-    const { id, divisionId} = req.params;
-
+    const { id } = req.params;
 
     try {
-      const member = await prisma.user.findUnique({ where: { id } });
+      const member = await prisma.user.findUnique({ 
+        where: { id },
+        include: { division: true }
+      });
 
       if (!member) {
         return res.status(404).json({
@@ -144,11 +144,6 @@ const memberController = {
       }
 
       await prisma.user.delete({ where: { id } });
-
-      await prisma.division.update({
-          where: { id: divisionId },
-          data: { totalMember: { decrement: 1 } }, 
-      });
 
       res.status(200).json({
         error: false,

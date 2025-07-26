@@ -6,6 +6,8 @@
     "start": "npx prisma generate && node ./bin/www",
     "dev": "npx prisma generate && nodemon ./bin/www",
     "seed": "node ./prisma/comprehensive.seed.js",
+    "seed:export": "node ./prisma/export-current-data.js",
+    "seed:exported": "node ./prisma/exported-seed.js",
     "reset": "node ./prisma/reset.js"
   },
   "dependencies": {
@@ -25,6 +27,9 @@
   "devDependencies": {
     "@prisma/client": "^6.3.1",
     "prisma": "^6.3.1"
+  },
+  "prisma": {
+    "seed": "node prisma/comprehensive.seed.js"
   },
   "main": "app.js",
   "author": "",

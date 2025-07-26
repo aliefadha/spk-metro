@@ -4,8 +4,8 @@ const divisionController = {
   // Create a division
   createDivision: async (req, res) => {
     try {
-        
-    const { divisionName } = req.body;
+
+      const { divisionName } = req.body;
 
       const existingDivision = await prisma.division.findUnique({
         where: { divisionName },
@@ -41,12 +41,29 @@ const divisionController = {
   // Get all divisions
   getAllDivisions: async (req, res) => {
     try {
-      const divisions = await prisma.division.findMany();
+      const divisions = await prisma.division.findMany({
+        include: {
+          _count: {
+            select: {
+              user: true
+            }
+          }
+        },
+        orderBy: {
+          created_at: 'asc'
+        }
+      });
+
+      // Transform the data to include totalMember
+      const divisionsWithTotalMember = divisions.map(division => ({
+        ...division,
+        totalMember: division._count.user
+      }));
 
       res.status(200).json({
         error: false,
         message: 'Divisions retrieved successfully',
-        data: divisions,
+        data: divisionsWithTotalMember,
       });
     } catch (err) {
       res.status(500).json({
@@ -91,7 +108,7 @@ const divisionController = {
   updateDivision: async (req, res) => {
     try {
       const { id } = req.params;
-      const { divisionName, totalMember } = req.body;
+      const { divisionName } = req.body;
 
       const division = await prisma.division.findUnique({
         where: { id },
@@ -108,7 +125,6 @@ const divisionController = {
         where: { id },
         data: {
           divisionName: divisionName || division.divisionName,
-          totalMember: totalMember !== undefined ? totalMember : division.totalMember,
         },
       });
 

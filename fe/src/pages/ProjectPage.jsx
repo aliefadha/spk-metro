@@ -23,9 +23,6 @@ export default function ProjectPage() {
           onChange={handleMonthChange}
           className="px-4 py-2 border border-primer rounded-lg bg-transparent text-primer"
         />
-        <button className="px-4 py-2 border border-primer rounded-lg bg-transparent text-primer ml-auto">
-          Export
-        </button>
       </div>
       <ProjectTable selectedMonth={selectedMonth} />
     </MainLayout>

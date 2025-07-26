@@ -20,9 +20,6 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
           console.error("No user found");
           return;
         }
-
-
-        
         // If SUPERADMIN and no division selected, don't fetch KPIs
         if (currentUser.role === 'SUPERADMIN' && !selectedDivision) {
 
@@ -403,6 +400,7 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
           }
           
           return (
+            <div>
             <table className="w-full" style={{ fontSize: "12px" }}>
               <thead>
                 <tr className="bg-purple-50">
@@ -456,8 +454,13 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
                 )}
               </tbody>
             </table>
+            <div className="mt-10">
+            <h1 className="text-[#6C6C6C] text-sm font-medium ">*Menu KPI Reports Individual memberikan gambaran lengkap performa setiap anggota berdasarkan rata-rata kontribusi mereka di seluruh proyek dalam periode tertentu, sebagai dasar evaluasi kinerja yang transparan dan terukur.</h1>
+          </div>
+            </div>
           );
         })()}
+        
       </div>
 
     </div>

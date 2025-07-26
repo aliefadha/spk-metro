@@ -215,6 +215,27 @@ const projectController = {
                 });
             }
 
+            // Delete related assessments first
+            const assessments = await prisma.assesment.findMany({
+                where: { projectId: id },
+            });
+
+            for (const assessment of assessments) {
+                await prisma.assesmentResult.deleteMany({
+                    where: { assesmentId: assessment.id },
+                });
+                await prisma.metricNormalization.deleteMany({
+                    where: { assesmentId: assessment.id },
+                });
+                await prisma.metricResult.deleteMany({
+                    where: { assesmentId: assessment.id },
+                });
+            }
+
+            await prisma.assesment.deleteMany({
+                where: { projectId: id },
+            });
+
             await prisma.projectCollaborator.deleteMany({
                 where: { projectId: id },
             });

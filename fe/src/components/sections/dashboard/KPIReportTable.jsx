@@ -160,6 +160,9 @@ const KPIReportTable = () => {
               </h2>
             </Card.Body>
           </Card>
+          <div className="mt-10">
+            <h1 className="text-[#6C6C6C] text-sm font-medium ">*KPI Total adalah indikator keseluruhan kinerja individu yang dihitung dari kontribusi setiap metrik KPI berdasarkan bobotnya, dan status Achieved hanya diberikan jika mencapai atau melebihi 100% sebagai standar maksimal.</h1>
+          </div>
         </div>
       )}
     </div>
