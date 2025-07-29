@@ -5,6 +5,15 @@ const validation = require('../validations/user.validation.js')
 const constant = require('../utils/constant.js')
 
 const userController = {
+    // Generate custom userId format: USR-0001, USR-0002, etc.
+    generateUserId: async () => {
+        // Get the count of existing users to determine the next sequential number
+        const userCount = await prisma.user.count();
+        const nextNumber = (userCount + 1).toString().padStart(4, '0');
+
+        return `USR-${nextNumber}`;
+    },
+
     createUser: async (req, res) => {
         try {
             const { error } = validation.createUser.validate(req.body);
@@ -20,8 +29,30 @@ const userController = {
 
             const hashedPassword = await encryptPassword("@Test123");
 
+            // Generate custom userId
+            let customUserId;
+            let isUserIdUnique = false;
+
+            // Ensure userId is unique
+            while (!isUserIdUnique) {
+                customUserId = await userController.generateUserId();
+                const existingUser = await prisma.user.findUnique({
+                    where: { id: customUserId },
+                });
+                if (!existingUser) {
+                    isUserIdUnique = true;
+                }
+            }
+
             const user = await prisma.user.create({
-                data: { fullName: name, email, role, password: hashedPassword },
+                data: {
+                    id: customUserId,
+                    userId: customUserId,
+                    fullName: name,
+                    email,
+                    role,
+                    password: hashedPassword
+                },
             });
 
             res.status(201).json({ error: false, message: 'User created successfully', data: user });
@@ -56,7 +87,7 @@ const userController = {
                     userId: user.id,
                 },
             });
-            
+
 
             res.status(200).json({ error: false, message: 'Login successful', data: { token, user } });
         } catch (err) {
@@ -120,20 +151,22 @@ const userController = {
                     role: true,
                     divisionId: true,
                     created_at: true,
+                    userId: true,
                 },
             });
 
+            console.log(user)
             res.status(200).json({
                 error: false,
                 message: 'Users retrieved successfully',
                 data: users,
             });
         } catch (err) {
-                res.status(500).json({
-                    error: true,
-                    message: 'Error retrieving users',
-                    errorDetail: err.message,
-                });
+            res.status(500).json({
+                error: true,
+                message: 'Error retrieving users',
+                errorDetail: err.message,
+            });
         }
     },
 
@@ -206,8 +239,8 @@ const userController = {
             });
         }
     },
-    
-    
+
+
 };
 
 module.exports = userController;

@@ -42,28 +42,15 @@ const SPKTable = () => {
     try {
       setLoading(true);
       
-      // Get all projects for Developer division
-      const projectsResponse = await api.get("http://localhost:3000/api/v1/projects");
-      const projects = projectsResponse.data.data || [];
-      
-      // Get current month and year
+      // Get current month and year for API query
       const currentDate = new Date();
-      const currentMonth = currentDate.getMonth(); // 0-11
+      const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0'); // 1-12, zero-padded
       const currentYear = currentDate.getFullYear();
+      const monthParam = `${currentYear}-${currentMonth}`;
       
-      // Filter only DONE projects with tanggal_selesai in current month
-      const doneProjects = projects.filter(p => {
-        if (p.status !== "DONE" || !p.tanggal_selesai) return false;
-        
-        try {
-          const completionDate = new Date(p.tanggal_selesai);
-          return completionDate.getMonth() === currentMonth && 
-                 completionDate.getFullYear() === currentYear;
-        } catch (error) {
-          console.error("Error parsing tanggal_selesai:", p.tanggal_selesai, error);
-          return false;
-        }
-      });
+      // Get DONE projects for current month using backend filtering
+      const projectsResponse = await api.get(`http://localhost:3000/api/v1/projects/done?month=${monthParam}`);
+      const doneProjects = projectsResponse.data.data || [];
       
       // Get assessments for all done projects
       const allAssessments = [];
@@ -85,7 +72,7 @@ const SPKTable = () => {
         }
       }
       
-      // Group assessments by user and calculate weighted scores
+      // Group assessments by user and calculate weighted scores using skorAkhir
       const userAssessments = {};
       allAssessments.forEach(assessment => {
         if (!userAssessments[assessment.userId]) {
@@ -97,7 +84,7 @@ const SPKTable = () => {
           };
         }
         
-        // Store raw metric values without calculation
+        // Calculate weighted scores for each metric using skorAkhir formula
         assessment.metrics.forEach(metric => {
           if (!userAssessments[assessment.userId].metrics[metric.metricId]) {
             userAssessments[assessment.userId].metrics[metric.metricId] = {
@@ -106,24 +93,39 @@ const SPKTable = () => {
             };
           }
           
-          // Use raw metric value directly
-          userAssessments[assessment.userId].metrics[metric.metricId].totalWeightedScore += metric.value;
-          userAssessments[assessment.userId].metrics[metric.metricId].totalWeight += 1;
+          // Find the KPI to get target for skorAkhir calculation
+          const kpi = kpiList.find(k => k.id === metric.metricId);
+          
+          if (kpi && kpi.target && metric.value !== 0) {
+            const actual = metric.value;
+            const target = kpi.target;
+            // Calculate skorAkhir: (actual / target) * 100
+            const skorAkhir = Math.round(((actual / target) * 100) * 1000) / 1000;
+            
+            // Add weighted score: skorAkhir * project.bobot
+            const weightedScore = Math.round((skorAkhir * assessment.projectBobot) * 1000) / 1000;
+            
+            userAssessments[assessment.userId].metrics[metric.metricId].totalWeightedScore += weightedScore;
+            userAssessments[assessment.userId].metrics[metric.metricId].totalWeight += assessment.projectBobot;
+          }
         });
       });
       
-      // Convert to expected format
+      // Convert to expected format with weighted averages
       const developerData = Object.values(userAssessments).map(user => ({
         userId: user.userId,
         fullName: user.fullName,
         assesmentDate: user.assesmentDate,
         metrics: kpiList.map(kpi => {
           const metricData = user.metrics[kpi.id];
-          if (metricData && metricData.totalWeightedScore) {
-            // Use raw totalWeightedScore without any calculation
+          if (metricData && metricData.totalWeight > 0) {
+            // Calculate weighted average: sum(skorAkhir * bobot) / sum(bobot)
+            const weightedAverage = metricData.totalWeightedScore / metricData.totalWeight;
+            const roundedValue = Math.round(weightedAverage * 1000) / 1000;
+            
             return {
               metricId: kpi.id,
-              value: metricData.totalWeightedScore
+              value: roundedValue
             };
           }
           return {
@@ -148,8 +150,28 @@ const SPKTable = () => {
       });
       setReportData(formattedData);
       
-      // Calculate normalized matrix from matriks keputusan data
-      const normalizedMatrix = formattedData.map(user => {
+      /*
+       * VIKOR CALCULATION WITH SKORAKHIR VALUES:
+       * 
+       * 1. Decision Matrix now uses skorAkhir values:
+       *    - skorAkhir = (actual / target) * 100 for each metric
+       *    - Weighted averages across projects using project.bobot
+       *    - Consistent with KPIReportTableIndividual.jsx logic
+       * 
+       * 2. Normalization formulas:
+       *    - Benefit criteria: (value - min) / (max - min) [higher values = better]
+       *    - Cost criteria: (max - value) / (max - min) [lower values = better]
+       * 
+       * 3. VIKOR Method Steps:
+       *    - Step 1: Normalize decision matrix (using skorAkhir values)
+       *    - Step 2: Calculate Si (weighted sum) and Ri (weighted maximum)
+       *    - Step 3: Calculate Qi using v=0.5 compromise weight
+       *    - Step 4: Rank alternatives by Qi (lowest = best)
+       */
+      
+      // Calculate normalized matrix from matriks keputusan data (now using skorAkhir values)
+      
+      const normalizedMatrix = formattedData.map((user) => {
         const normalizedValues = user.metrics.map((value, metricIndex) => {
           const kpi = kpiList[metricIndex];
           
@@ -175,7 +197,8 @@ const SPKTable = () => {
             normalizedValue = (value - minValue) / (maxValue - minValue);
           }
           
-          return Math.round(normalizedValue * 1000) / 1000; // Round to 3 decimal places
+          const roundedValue = Math.round(normalizedValue * 1000) / 1000;
+          return roundedValue; // Round to 3 decimal places
         });
         
         return {
@@ -186,11 +209,10 @@ const SPKTable = () => {
       
       setNormalizedData(normalizedMatrix);
 
-      // Calculate and log sum of all weights
-      const totalWeight = kpiList.reduce((sum, kpi) => sum + parseFloat(kpi.bobot), 0);
+      // Calculate sum of all weights
+      const totalWeight = Math.round(kpiList.reduce((sum, kpi) => sum + parseFloat(kpi.bobot), 0) * 1000) / 1000;
       
       const calculatedSiRi = normalizedMatrix.map(user => {
-        
         // Si = Σ(wj/totalWeight * rij) - weighted sum using normalized values
         const si = user.values.reduce((sum, value, index) => {
           const weight = parseFloat(kpiList[index].bobot);
@@ -199,48 +221,52 @@ const SPKTable = () => {
           return sum + weightedValue;
         }, 0);
         
+        const roundedSi = Math.round(si * 1000) / 1000;
         
         // Ri = max(wj/totalWeight * rij) - weighted maximum using normalized values
-        const ri = Math.max(...user.values.map((value, index) => {
+        const weightedValues = user.values.map((value, index) => {
           const weight = parseFloat(kpiList[index].bobot);
-          const normalizedWeight = weight / totalWeight;
-          return normalizedWeight * value;
-        }));
+          const normalizedWeight = Math.round((weight / totalWeight) * 1000) / 1000;
+          const weightedValue = Math.round((normalizedWeight * value) * 1000) / 1000;
+          return weightedValue;
+        });
+        const ri = Math.max(...weightedValues);
+        const roundedRi = Math.round(ri * 1000) / 1000;
         
         return {
           fullName: user.fullName,
-          Si: Math.round(si * 1000) / 1000, // Round to 3 decimal places
-          Ri: Math.round(ri * 1000) / 1000  // Round to 3 decimal places
+          Si: roundedSi,
+          Ri: roundedRi
         };
       });
-
       
       setSiRiData(calculatedSiRi);
       
       // Calculate Qi values using VIKOR method
+      const allSiValues = calculatedSiRi.map(u => u.Si);
+      const allRiValues = calculatedSiRi.map(u => u.Ri);
+      const siMin = Math.min(...allSiValues);
+      const siMax = Math.max(...allSiValues);
+      const riMin = Math.min(...allRiValues);
+      const riMax = Math.max(...allRiValues);
+      
       const calculatedQi = calculatedSiRi.map(user => {
-        // Calculate Si* (minimum Si) and Ri* (minimum Ri) from all users
-        const allSiValues = calculatedSiRi.map(u => u.Si);
-        const allRiValues = calculatedSiRi.map(u => u.Ri);
-        const siMin = Math.min(...allSiValues);
-        const siMax = Math.max(...allSiValues);
-        const riMin = Math.min(...allRiValues);
-        const riMax = Math.max(...allRiValues);
-        
         // Calculate Qi using VIKOR formula: Qi = v * (Si - Si*)/(Si- - Si*) + (1-v) * (Ri - Ri*)/(Ri- - Ri*)
         // where v = 0.5 (typical weight for group utility)
         const v = 0.5;
         let qi = 0;
         
         if (siMax !== siMin && riMax !== riMin) {
-          const siComponent = v * (user.Si - siMin) / (siMax - siMin);
-          const riComponent = (1 - v) * (user.Ri - riMin) / (riMax - riMin);
+          const siComponent = Math.round((v * (user.Si - siMin) / (siMax - siMin)) * 1000) / 1000;
+          const riComponent = Math.round(((1 - v) * (user.Ri - riMin) / (riMax - riMin)) * 1000) / 1000;
           qi = siComponent + riComponent;
         }
         
+        const roundedQi = Math.round(qi * 1000) / 1000;
+        
         return {
           fullName: user.fullName,
-          Qi: Math.round(qi * 1000) / 1000 // Round to 3 decimal places
+          Qi: roundedQi
         };
       });
       
@@ -292,7 +318,7 @@ const SPKTable = () => {
                   className="px-4 py-3"
                   style={{ textAlign: "center" }}
                 >
-                  {value}
+                  {typeof value === 'number' ? value.toFixed(3) : value}
                 </td>
               ))}
             </tr>
@@ -358,7 +384,7 @@ const SPKTable = () => {
                       className="px-4 py-3"
                       style={{ textAlign: "center" }}
                     >
-                      {value}
+                      {typeof value === 'number' ? value.toFixed(3) : value}
                     </td>
                   ))}
                 </tr>
@@ -408,8 +434,8 @@ const SPKTable = () => {
                   siRiData.map((row, index) => (
                     <tr key={index} className="border-b">
                       <td className="px-4 py-3">{row.fullName}</td>
-                      <td className="px-4 py-3 text-left">{row.Si}</td>
-                      <td className="px-4 py-3 text-left">{row.Ri}</td>
+                      <td className="px-4 py-3 text-left">{typeof row.Si === 'number' ? row.Si.toFixed(3) : row.Si}</td>
+                      <td className="px-4 py-3 text-left">{typeof row.Ri === 'number' ? row.Ri.toFixed(3) : row.Ri}</td>
                     </tr>
                   ))
                 ) : (
@@ -444,7 +470,7 @@ const SPKTable = () => {
                   vikorResult.map((row, index) => (
                     <tr key={index} className="border-b">
                       <td className="px-4 py-3">{row.fullName}</td>
-                      <td className="px-4 py-3 text-left">{row.Qi}</td>
+                      <td className="px-4 py-3 text-left">{typeof row.Qi === 'number' ? row.Qi.toFixed(3) : row.Qi}</td>
                     </tr>
                   ))
                 ) : (

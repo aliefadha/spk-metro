@@ -87,7 +87,13 @@ const ProjectTable = ({ selectedMonth }) => {
   }, []);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    
+    if (name === 'projectManager') {
+      setSelectedAnggota(prev => prev.filter(id => id !== value));
+    }
+    
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleCheckboxChange = (e) => {
@@ -105,6 +111,16 @@ const ProjectTable = ({ selectedMonth }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validate completion date if status is DONE
+    if (formData.status === 'DONE' && !formData.tanggal_selesai) {
+      Swal.fire({
+        icon: "error",
+        title: "Validasi Gagal",
+        text: "Tanggal selesai wajib diisi untuk proyek dengan status DONE.",
+      });
+      return;
+    }
+
     const pmId = formData.projectManager;
 
     const allCollaborators = [...new Set([...selectedAnggota, pmId])];
@@ -118,6 +134,7 @@ const ProjectTable = ({ selectedMonth }) => {
       projectName: formData.projectName,
       bobot: parseFloat(formData.bobot),
       deadline: formData.deadline,
+      tanggal_selesai: formData.tanggal_selesai || null,
       status: formData.status,
       projectCollaborator,
     };
@@ -131,6 +148,7 @@ const ProjectTable = ({ selectedMonth }) => {
         projectName: "",
         bobot: "",
         deadline: "",
+        tanggal_selesai: "",
         status: "BACKLOG",
         projectManager: "",
       });
@@ -164,13 +182,24 @@ const ProjectTable = ({ selectedMonth }) => {
 
   const handleEditCheckboxChange = (e) => {
     const { value, checked } = e.target;
-    setSelectedEditAnggota((prev) =>
-      checked ? [...prev, value] : prev.filter((id) => id !== value)
-    );
+    setSelectedEditAnggota((prev) => {
+      if (checked) {
+        return [...prev, value];
+      } else {
+        return prev.filter((id) => id !== value);
+      }
+    });
   };
 
   const handleEditChange = (e) => {
-    setEditValues({ ...editValues, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    
+    // If changing project manager, remove the new PM from selected members
+    if (name === 'projectManager') {
+      setSelectedEditAnggota(prev => prev.filter(id => id !== value));
+    }
+    
+    setEditValues({ ...editValues, [name]: value });
   };
 
   // Fungsi untuk membatalkan mode edit
@@ -188,6 +217,16 @@ const ProjectTable = ({ selectedMonth }) => {
 
   // Fungsi untuk menyimpan update melalui API PUT
   const handleUpdate = async (id) => {
+    // Validate completion date if status is DONE
+    if (editValues.status === 'DONE' && !editValues.tanggal_selesai) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "Tanggal selesai wajib diisi untuk proyek dengan status DONE.",
+      });
+      return;
+    }
+
     try {
       const updatedProject = {
         projectName: editValues.projectName,
@@ -280,6 +319,7 @@ const ProjectTable = ({ selectedMonth }) => {
         <table className="w-full">
           <thead>
             <tr className="bg-purple-50">
+              <th className="px-4 py-3 text-left text-primer">No</th>
               <th className="px-4 py-3 text-left text-primer">Nama Proyek</th>
               <th className="px-4 py-3 text-left text-primer">Bobot</th>
               <th className="px-4 py-3 text-left text-primer">Deadline</th>
@@ -293,6 +333,9 @@ const ProjectTable = ({ selectedMonth }) => {
           <tbody>
             {filteredData.map((row) => (
               <tr key={row.id} className="border-b">
+                <td className="px-4 py-3">
+                  #00{filteredData.indexOf(row) + 1}
+                </td>
                 {/* Nama Proyek */}
                 <td className="px-4 py-3">
                   {isEditing === row.id ? (
@@ -366,18 +409,20 @@ const ProjectTable = ({ selectedMonth }) => {
                 <td className="px-4 py-3">
                   {isEditing === row.id ? (
                     <div className="flex flex-wrap gap-2">
-                      {anggota.map((item) => (
-                        <label key={item.id} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            value={item.id}
-                            checked={selectedEditAnggota.includes(item.id)}
-                            onChange={handleEditCheckboxChange}
-                            className="mr-2"
-                          />
-                          {item.fullName}
-                        </label>
-                      ))}
+                      {anggota
+                        .filter((item) => item.id !== editValues.projectManager)
+                        .map((item) => (
+                          <label key={item.id} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              value={item.id}
+                              checked={selectedEditAnggota.includes(item.id)}
+                              onChange={handleEditCheckboxChange}
+                              className="mr-2"
+                            />
+                            {item.fullName}
+                          </label>
+                        ))}
                     </div>
                   ) : (
                     row.anggota
@@ -422,6 +467,7 @@ const ProjectTable = ({ selectedMonth }) => {
                         editValues.status !== 'DONE' ? 'bg-gray-100' : ''
                       }`}
                       disabled={editValues.status !== 'DONE'}
+                      required={editValues.status === 'DONE'}
                     />
                   ) : (
                     row.tanggal_selesai || "-"
@@ -531,17 +577,19 @@ const ProjectTable = ({ selectedMonth }) => {
                   Anggota*
                 </label>
                 <div className="flex flex-wrap gap-4">
-                  {anggota.map((item) => (
-                    <div key={item.id} className="flex items-center mb-2">
-                      <input
-                        type="checkbox"
-                        value={item.id}
-                        onChange={handleCheckboxChange}
-                        className="mr-2"
-                      />
-                      <label>{item.fullName}</label>
-                    </div>
-                  ))}
+                  {anggota
+                    .filter((item) => item.id !== formData.projectManager)
+                    .map((item) => (
+                      <div key={item.id} className="flex items-center mb-2">
+                        <input
+                          type="checkbox"
+                          value={item.id}
+                          onChange={handleCheckboxChange}
+                          className="mr-2"
+                        />
+                        <label>{item.fullName}</label>
+                      </div>
+                    ))}
                 </div>
               </div>
               <div className="mb-4 flex items-center">
@@ -556,6 +604,21 @@ const ProjectTable = ({ selectedMonth }) => {
                   <option value="DONE">Done</option>
                 </select>
               </div>
+              {formData.status === 'DONE' && (
+                <div className="mb-4 flex items-center">
+                  <label className="w-1/3 text-sm font-medium">
+                    Tanggal Selesai*
+                  </label>
+                  <input
+                    type="date"
+                    name="tanggal_selesai"
+                    className="w-2/3 border p-2 rounded-md"
+                    onChange={handleChange}
+                    value={formData.tanggal_selesai}
+                    required={formData.status === 'DONE'}
+                  />
+                </div>
+              )}
               <div className="flex justify-end space-x-4">
                 <button
                   type="button"

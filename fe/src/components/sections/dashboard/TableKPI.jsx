@@ -239,6 +239,7 @@ const TableKPI = ({ divisionId, divisionName }) => {
           <table className="w-full">
             <thead>
               <tr className="bg-purple-50">
+                <th className="px-4 py-3 text-left text-primer">No</th>
                 <th className="px-4 py-3 text-left text-primer">ID KPI</th>
                 <th className="px-4 py-3 text-left text-primer">Nama KPI </th>
                 <th className="px-4 py-3 text-left text-primer">Karakteristik</th>
@@ -250,6 +251,9 @@ const TableKPI = ({ divisionId, divisionName }) => {
             <tbody>
               {filteredData.map((row) => (
                 <tr key={row.id} className="border-b">
+                  <td className="px-4 py-3">
+                   #00{filteredData.indexOf(row) + 1}
+                  </td>
                   <td className="px-4 py-3">
                     {isEditing === row.id ? (
                       <input

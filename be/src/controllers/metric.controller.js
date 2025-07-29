@@ -48,21 +48,28 @@ const metricController = {
 
             const reportData = assessments.map(assessment => {
                 const metric = metrics.find(m => m.id === assessment.metricId);
-                if (!metric || !metric.target || assessment.value === 0) return null;
+                if (!metric || !metric.target) return null;
 
                 const actual = assessment.value;
                 const target = metric.target;
                 let skorAkhir = 0;
 
-                if (metric.char === 'Benefit') {
+                if (actual === 0) {
+                    skorAkhir = 0;
+                } else {
                     skorAkhir = (actual / target) * 100;
-                } else if (metric.char === 'Cost') {
-                    skorAkhir = (target / actual) * 100;
                 }
 
                 // Tambahkan ke total skor berbobot dan total bobot
                 totalBobot += metric.bobot;
                 totalSkorBerbobot += skorAkhir * metric.bobot;
+
+                let status = "Not Achieved";
+                if (metric.char === 'Benefit') {
+                    status = actual >= target ? "Achieved" : "Not Achieved";
+                } else if (metric.char === 'Cost') {
+                    status = actual <= target ? "Achieved" : "Not Achieved";
+                }
 
                 return {
                     metricId: assessment.metricId,
@@ -71,7 +78,7 @@ const metricController = {
                     target: metric.target,
                     skorAktual: actual,
                     skorAkhir: `${skorAkhir.toFixed(2)}`,
-                    status: actual >= target ? "Achieved" : "Not Achieved",
+                    status: status
                 };
             }).filter(item => item !== null);
 

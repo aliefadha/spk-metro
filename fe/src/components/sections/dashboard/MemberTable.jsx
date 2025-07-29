@@ -81,28 +81,6 @@ const MemberTable = () => {
   };
 
   const handleDelete = async (id) => {
-    console.log('🔥 DELETE TRIGGERED:', {
-      id,
-      deletingId,
-      isLoading,
-      itemExists: !!data.find(item => item.id === id),
-      dataLength: data.length,
-      timestamp: new Date().toISOString()
-    });
-    
-    if (deletingId === id || isLoading || !data.find(item => item.id === id)) {
-      console.log('🚫 DELETE BLOCKED:', {
-        reason: deletingId === id ? 'Already deleting' : 
-                isLoading ? 'Loading in progress' : 
-                'Item not found',
-        deletingId,
-        isLoading,
-        itemExists: !!data.find(item => item.id === id)
-      });
-      return;
-    }
-    
-    console.log('✅ DELETE PROCEEDING with confirmation dialog');
     
     const confirm = await Swal.fire({
       title: "Yakin ingin menghapus member ini?",
@@ -122,28 +100,19 @@ const MemberTable = () => {
       
       // Optimistic update: immediately remove from UI
       const originalData = [...data];
-      console.log('💾 BACKUP DATA:', originalData.length, 'items');
       setData(prevData => prevData.filter(item => item.id !== id));
-      console.log('🗑️ OPTIMISTIC UPDATE: Removed item from UI');
       
       try {
-        console.log('🌐 API DELETE REQUEST for ID:', id);
         const deleteResponse = await api.delete(`/v1/member/${id}`);
         console.log('✅ API DELETE SUCCESS:', deleteResponse.status);
         
         // Force component re-render
         setRefreshKey(prev => {
           const newKey = prev + 1;
-          console.log('🔄 REFRESH KEY UPDATE:', prev, '->', newKey);
           return newKey;
         });
         
-        // Fetch fresh data to ensure consistency
-        console.log('📥 FETCHING FRESH DATA...');
         await fetchData();
-        console.log('📥 FRESH DATA FETCHED');
-        
-        console.log('🎉 SHOWING SUCCESS MESSAGE');
         Swal.fire({
           icon: "success",
           title: "Berhasil!",
@@ -154,14 +123,8 @@ const MemberTable = () => {
           allowEscapeKey: false
         });
       } catch (error) {
-        console.error('❌ DELETE ERROR:', {
-          message: error.message,
-          status: error.response?.status,
-          data: error.response?.data,
-          id
-        });
         
-        console.log('🔄 REVERTING OPTIMISTIC UPDATE');
+
         setData(originalData);
         
         Swal.fire({
@@ -170,13 +133,11 @@ const MemberTable = () => {
           text: error.response?.data?.message || "Terjadi kesalahan.",
         });
       } finally {
-        console.log('🧹 CLEANUP: Resetting states');
+
         setDeletingId(null);
         setIsLoading(false);
-        console.log('✨ DELETE PROCESS COMPLETED for ID:', id);
+
       }
-    } else {
-      console.log('❌ DELETE CANCELLED by user');
     }
   };
 
@@ -234,6 +195,7 @@ const MemberTable = () => {
           <thead>
             <tr className="bg-purple-50">
               <th className="px-4 py-3 text-left text-primer">Nomor Member</th>
+              <th className="px-4 py-3 text-left text-primer">ID Member</th>
               <th className="px-4 py-3 text-left text-primer">Nama Member</th>
               <th className="px-4 py-3 text-left text-primer">Divisi</th>
               <th className="px-4 py-3 text-left text-primer">Aksi</th>
@@ -245,6 +207,7 @@ const MemberTable = () => {
               .map((row, index) => (
                 <tr key={row.id} className="border-b">
                   <td className="px-4 py-3">#00{index + 1}</td>
+                  <td className="px-4 py-3">{row.userId}</td>
                   <td className="px-4 py-3">
                     {isEditing === row.id ? (
                       <input

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Edit, Check, X, FileText } from "lucide-react";
 import api from "@/utils/axios";
 import Swal from "sweetalert2";
-// PropTypes import removed: prop validation not used
+import PropTypes from "prop-types";
 
 const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
   const [assessments, setAssessments] = useState([]);
@@ -21,16 +21,25 @@ const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
       try {
         let url = "http://localhost:3000/api/v1/projects";
         
-        // If selectedMonth is provided, use the new done projects endpoint
         if (selectedMonth) {
           url = `http://localhost:3000/api/v1/projects/done?month=${selectedMonth}`;
           const response = await api.get(url);
-          setProjects(response.data.data || []);
+          const projectsData = response.data.data || [];
+          setProjects(projectsData);
+          if (projectsData.length > 0) {
+            setSelectedProject(projectsData[0].id);
+          } else {
+            setSelectedProject("");
+          }
         } else {
-          // Fallback to original endpoint and filter client-side
           const response = await api.get(url);
           const doneProjects = (response.data.data || []).filter(project => project.status === "DONE");
           setProjects(doneProjects);
+          if (doneProjects.length > 0) {
+            setSelectedProject(doneProjects[0].id);
+          } else {
+            setSelectedProject("");
+          }
         }
       } catch (error) {
         console.error("Gagal memuat projects:", error);
@@ -237,13 +246,58 @@ const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
     setEditValues({});
   };
 
+  // Fungsi untuk mengecek apakah editing diizinkan
+  const isEditingAllowed = () => {
+    // Jika tidak ada bulan yang dipilih, izinkan edit (bulan saat ini)
+    if (!selectedMonth) {
+      return true;
+    }
+    
+    // Cek apakah bulan yang dipilih adalah bulan saat ini
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
+    
+    const selectedDate = new Date(selectedMonth + '-01');
+    const selectedYear = selectedDate.getFullYear();
+    const selectedMonthIndex = selectedDate.getMonth();
+    
+    // Izinkan edit untuk bulan saat ini (semua divisi)
+    const isCurrentMonth = currentYear === selectedYear && currentMonth === selectedMonthIndex;
+    if (isCurrentMonth) {
+      return true;
+    }
+    
+    // Untuk bulan selain bulan saat ini, hanya izinkan edit untuk divisi Developer
+    return divisionName === "Developer";
+  };
+
   let filteredAssessments = assessments;
   
   if (divisionName === "Developer" && selectedProject && collaborators.length > 0) {
     const collaboratorIds = collaborators.map((c) => c.userId);
-    filteredAssessments = filteredAssessments.filter((item) =>
+    const existingAssessments = assessments.filter((item) =>
       collaboratorIds.includes(item.userId)
     );
+    
+    // Find collaborators who don't have assessment data
+    const existingUserIds = existingAssessments.map(item => item.userId);
+    const missingCollaborators = collaborators.filter(collaborator => !existingUserIds.includes(collaborator.userId));
+    
+    // Add missing collaborators with empty metrics (0 values)
+    const emptyMetrics = kpiList.reduce((acc, kpi) => {
+      acc[kpi.id] = 0; // Use 0 instead of null for better UX
+      return acc;
+    }, {});
+    
+    const additionalCollaborators = missingCollaborators.map(collaborator => ({
+      userId: collaborator.userId,
+      fullName: collaborator.fullName,
+      assesmentDate: null,
+      metrics: emptyMetrics
+    }));
+    
+    filteredAssessments = [...existingAssessments, ...additionalCollaborators];
   } else if (divisionName && divisionName !== "Developer" && divisionMembers.length > 0) {
     // For non-developer divisions, show all division members even if they don't have assessment data
     const existingUserIds = assessments.map(item => item.userId);
@@ -251,7 +305,7 @@ const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
     
     // Add missing members with empty metrics
     const emptyMetrics = kpiList.reduce((acc, kpi) => {
-      acc[kpi.id] = undefined;
+      acc[kpi.id] = 0; // Use 0 instead of null for consistency
       return acc;
     }, {});
     
@@ -278,19 +332,20 @@ const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
         </h2>
         {divisionName === "Developer" && (
           <div className="flex flex-col">
-            <select
-              className="px-4 py-2 border border-primer rounded-lg bg-transparent text-primer"
-              value={selectedProject}
-              onChange={e => setSelectedProject(e.target.value)}
-            >
-              <option value="">Filter berdasarkan proyek</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.projectName}
-                </option>
-              ))}
-            </select>
-            {projects.length === 0 && (
+            {projects.length > 0 ? (
+              <select
+                className="px-4 py-2 border border-primer rounded-lg bg-transparent text-primer"
+                value={selectedProject}
+                onChange={e => setSelectedProject(e.target.value)}
+              >
+                <option value="">Pilih Project</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.projectName}
+                  </option>
+                ))}
+              </select>
+            ) : (
               <p className="text-xs text-gray-500 mt-1">
                 {selectedMonth 
                   ? `Tidak ada proyek DONE pada ${new Date(selectedMonth + '-01').toLocaleDateString('id-ID', { year: 'numeric', month: 'long' })}`
@@ -365,10 +420,10 @@ const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
                           }
                           className="w-full border p-1 rounded"
                         />
-                      ) : item.metrics[kpi.id] !== undefined ? (
+                      ) : item.metrics[kpi.id] !== undefined && item.metrics[kpi.id] !== null ? (
                         item.metrics[kpi.id]
                       ) : (
-                        "-"
+                        "0"
                       )}
                     </td>
                   ))}
@@ -393,9 +448,23 @@ const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
                       ) : (
                         <button
                           onClick={() => handleEdit(item.userId, item.metrics)}
-                          className="p-1 hover:text-yellow-500"
+                          disabled={!isEditingAllowed()}
+                          className={`p-1 ${
+                            isEditingAllowed() 
+                              ? "hover:text-yellow-500" 
+                              : "cursor-not-allowed opacity-50"
+                          }`}
+                          title={
+                            !isEditingAllowed() 
+                              ? "Edit hanya tersedia untuk bulan saat ini atau divisi Developer untuk bulan lainnya"
+                              : "Edit assessment"
+                          }
                         >
-                          <Edit className="w-5 h-5 text-yellow-400" />
+                          <Edit className={`w-5 h-5 ${
+                            isEditingAllowed() 
+                              ? "text-yellow-400" 
+                              : "text-gray-400"
+                          }`} />
                         </button>
                       )}
                     </div>
@@ -420,4 +489,11 @@ const AssesmentTable = ({ selectedDivision, divisionName, selectedMonth }) => {
     </div>
   );
 };
+
+AssesmentTable.propTypes = {
+  selectedDivision: PropTypes.string,
+  divisionName: PropTypes.string,
+  selectedMonth: PropTypes.string,
+};
+
 export default AssesmentTable;

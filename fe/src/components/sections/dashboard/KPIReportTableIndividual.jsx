@@ -102,24 +102,34 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
       
       if (targetDivision && targetDivision.divisionName === "Developer") {
           // For Developer division, we need to get all projects and their assessments
-          let projectsUrl = "http://localhost:3000/api/v1/projects";
+          let projectsUrl;
           
-          // Add month parameter if provided for done projects
           if (month) {
+            // Use specific month filtering
             projectsUrl = `http://localhost:3000/api/v1/projects/done?month=${month}`;
+          } else {
+            // Get current month's DONE projects when no month is specified
+            const currentDate = new Date();
+            const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+            const currentYear = currentDate.getFullYear();
+            const currentMonthParam = `${currentYear}-${currentMonth}`;
+            projectsUrl = `http://localhost:3000/api/v1/projects/done?month=${currentMonthParam}`;
           }
           
           const projectsResponse = await api.get(projectsUrl);
-          const projects = projectsResponse.data.data || [];
-          
-          // Filter only DONE projects if no month filter is applied
-          const doneProjects = month ? projects : projects.filter(p => p.status === "DONE");
+          const doneProjects = projectsResponse.data.data || [];
           
           // Get assessments for all done projects
           const allAssessments = [];
           for (const project of doneProjects) {
             try {
-              const assessmentResponse = await api.get(`http://localhost:3000/api/v1/assessments/project/${project.id}`);
+              // Add month parameter to assessment API call if provided
+              let assessmentUrl = `http://localhost:3000/api/v1/assessments/project/${project.id}`;
+              if (month) {
+                assessmentUrl += `?month=${month}`;
+              }
+              
+              const assessmentResponse = await api.get(assessmentUrl);
               const projectAssessments = assessmentResponse.data.data || [];
               
               // Add project info to each assessment
@@ -149,12 +159,12 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
           
           // Group assessments by user for processing
           const userAssessmentsMap = {};
-          filteredAssessments.forEach(assessment => {
+          filteredAssessments.forEach((assessment) => {
             if (!userAssessmentsMap[assessment.userId]) {
               userAssessmentsMap[assessment.userId] = {
                 userId: assessment.userId,
                 fullName: assessment.fullName,
-                assesmentDate: null,
+                assesmentDate: assessment.assesmentDate,
                 metrics: {}
               };
             }
@@ -165,7 +175,7 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
             }
             
             // Calculate weighted scores for each metric
-            assessment.metrics.forEach(metric => {
+            assessment.metrics.forEach((metric) => {
               if (!userAssessments.metrics[metric.metricId]) {
                 userAssessments.metrics[metric.metricId] = {
                   totalWeightedScore: 0,
@@ -175,20 +185,19 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
               
               // Find the KPI to get target and char for skorAkhir calculation
               const kpi = kpiList.find(k => k.id === metric.metricId);
+              
               if (kpi && kpi.target && metric.value !== 0) {
                 const actual = metric.value;
                 const target = kpi.target;
                 let skorAkhir = 0;
                 
                 // Calculate skorAkhir based on characteristic
-                if (kpi.char === 'Benefit') {
+                
                   skorAkhir = (actual / target) * 100;
-                } else if (kpi.char === 'Cost') {
-                  skorAkhir = (target / actual) * 100;
-                }
                 
                 // Add weighted score: skorAkhir * project.bobot
                 const weightedScore = skorAkhir * assessment.projectBobot;
+                
                 userAssessments.metrics[metric.metricId].totalWeightedScore += weightedScore;
                 userAssessments.metrics[metric.metricId].totalWeight += assessment.projectBobot;
               }
@@ -198,45 +207,37 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
           // Convert to expected format with weighted averages for all users
           let developerData = [];
           if (filteredAssessments.length > 0) {
-            developerData = Object.values(userAssessmentsMap).map(userAssessments => ({
-              userId: userAssessments.userId,
-              fullName: userAssessments.fullName,
-              assesmentDate: userAssessments.assesmentDate,
-              metrics: kpiList.map(kpi => {
+            developerData = Object.values(userAssessmentsMap).map((userAssessments) => {
+              const userMetrics = kpiList.map((kpi) => {
                 const metricData = userAssessments.metrics[kpi.id];
+                
                 if (metricData && metricData.totalWeight > 0) {
                   // Calculate weighted average: sum(skorAkhir * bobot) / sum(bobot)
                   const weightedAverage = metricData.totalWeightedScore / metricData.totalWeight;
+                  const roundedValue = Math.round(weightedAverage * 100) / 100;
+                  
                   return {
                     metricId: kpi.id,
-                    value: Math.round(weightedAverage * 100) / 100 // Round to 2 decimal places
+                    value: roundedValue
                   };
                 }
+                
                 return {
                   metricId: kpi.id,
                   value: 0
                 };
-              })
-            }));
-          }
-          
-          // Apply client-side month filtering for developer assessments if month is provided
-          if (month) {
-            developerData = developerData.filter((user) => {
-              if (!user.assesmentDate) return false;
+              });
               
-              try {
-                const itemDate = new Date(user.assesmentDate);
-                const selectedDate = new Date(month + '-01');
-                
-                return itemDate.getFullYear() === selectedDate.getFullYear() &&
-                       itemDate.getMonth() === selectedDate.getMonth();
-              } catch (error) {
-                console.error("Error parsing date:", user.assesmentDate, error);
-                return false;
-              }
+              return {
+                userId: userAssessments.userId,
+                fullName: userAssessments.fullName,
+                assesmentDate: userAssessments.assesmentDate,
+                metrics: userMetrics
+              };
             });
           }
+          
+          // Month filtering is now handled by the API, no need for client-side filtering
           
           response = { data: { data: developerData } };
         } else if (targetDivision) {
@@ -293,8 +294,6 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
               assesmentDate: user.assesmentDate || user.created_at
             };
           });
-
-          
           response = { data: { data: convertedData } };
         } else {
           // No division information available
@@ -304,11 +303,9 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
         // Format the data to match the expected structure and align with division-specific KPIs
         const formattedData = response.data.data.map((user) => {
           // Create metrics array aligned with the current kpiList order
-          const metrics = kpiList.map(kpi => {
+          const metrics = kpiList.map((kpi) => {
             const userMetric = user.metrics.find(m => m.metricId === kpi.id);
-            const value = userMetric ? userMetric.value : 0;
-
-            return value;
+            return userMetric ? userMetric.value : 0;
           });
           
           const totalSkor = metrics.length > 0 
@@ -410,15 +407,12 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
                       {kpi.kpiName}
                     </th>
                   ))}
-                  <th className="px-4 py-3 text-center text-primer">
-                    Average Skor
-                  </th>
                 </tr>
               </thead>
               <tbody>
                 {kpiList.length === 0 ? (
                   <tr>
-                    <td colSpan="3" className="text-center py-8 text-gray-500">
+                    <td colSpan={1} className="text-center py-8 text-gray-500">
                       <div className="flex flex-col items-center gap-2">
                         <FileText className="w-12 h-12 text-gray-300" />
                         <p>Tidak ada KPI untuk divisi Anda</p>
@@ -428,7 +422,7 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
                   </tr>
                 ) : reportData.length === 0 ? (
                   <tr>
-                    <td colSpan={kpiList.length + 2} className="text-center py-8 text-gray-500">
+                    <td colSpan={kpiList.length + 1} className="text-center py-8 text-gray-500">
                       <div className="flex flex-col items-center gap-2">
                         <FileText className="w-12 h-12 text-gray-300" />
                         <p>Tidak ada data assessment untuk Anda</p>
@@ -448,7 +442,6 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
                           {value}
                         </td>
                       ))}
-                      <td className="text-center px-4 py-3">{row.totalSkor}</td>
                     </tr>
                   ))
                 )}

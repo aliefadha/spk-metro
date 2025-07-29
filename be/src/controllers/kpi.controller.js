@@ -199,6 +199,38 @@ const kpiController = {
         });
       }
 
+      // Delete related records first to avoid foreign key constraint violations
+      await prisma.metricResult.deleteMany({
+        where: {
+          OR: [
+            { assesment: { metricId: id } },
+            { assesmentNonDev: { metricId: id } }
+          ]
+        }
+      });
+
+      await prisma.metricNormalization.deleteMany({
+        where: {
+          OR: [
+            { assesment: { metricId: id } },
+            { assesmentNonDev: { metricId: id } }
+          ]
+        }
+      });
+
+      await prisma.assesmentResult.deleteMany({
+        where: {
+          OR: [
+            { assesment: { metricId: id } },
+            { assesmentNonDev: { metricId: id } }
+          ]
+        }
+      });
+
+      await prisma.assesment.deleteMany({ where: { metricId: id } });
+      await prisma.assesmentNonDev.deleteMany({ where: { metricId: id } });
+
+      // Finally delete the metric
       await prisma.metric.delete({ where: { id } });
 
       res.status(200).json({

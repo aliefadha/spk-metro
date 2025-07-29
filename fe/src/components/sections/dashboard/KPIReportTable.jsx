@@ -26,6 +26,11 @@ const KPIReportTable = () => {
 
 
         setProjects(allProjects);
+        
+        // Set first project as default if projects exist and no project is selected
+        if (allProjects.length > 0 && !selectedProject) {
+          setSelectedProject(allProjects[0].id);
+        }
       } catch (error) {
         console.error("Gagal mengambil data project:", error);
       }
@@ -77,7 +82,6 @@ const KPIReportTable = () => {
           onChange={(e) => setSelectedProject(e.target.value)}
           className="px-4 py-2 rounded-lg bg-primer text-white min-w-[200px]"
         >
-          <option value="">Pilih Project</option>
           {projects.map((proj) => (
             <option key={proj.id} value={proj.id}>
               {proj.projectName}
@@ -156,13 +160,10 @@ const KPIReportTable = () => {
           >
             <Card.Body>
               <h2 className="text-lg font-semibold">
-                Skor KPI Total adalah : {totalSkor} ({reportData.every(row => row.status === "Achieved") ? "Achieved" : "Not Achieved"})
+                Status KPI Keseluruhan: {reportData.every(row => row.status === "Achieved") ? "Achieved" : "Not Achieved"}
               </h2>
             </Card.Body>
           </Card>
-          <div className="mt-10">
-            <h1 className="text-[#6C6C6C] text-sm font-medium ">*KPI Total adalah indikator keseluruhan kinerja individu yang dihitung dari kontribusi setiap metrik KPI berdasarkan bobotnya, dan status Achieved hanya diberikan jika mencapai atau melebihi 100% sebagai standar maksimal.</h1>
-          </div>
         </div>
       )}
     </div>
