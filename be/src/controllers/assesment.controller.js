@@ -124,41 +124,38 @@ const assessmentController = {
             });
         }
 
-        // Cek apakah assessment ada sebelum update
-        const existingAssessments = await prisma.assesment.findMany({
-            where: projectId ? { userId, projectId } : { userId }
-        });
-        console.log("Existing Assessments:", existingAssessments);
-
-        // Update setiap assessment berdasarkan userId + metricId
-        const updatePromises = assessments.map(async ({ metricId, value, assesmentDate }) => {
-            const whereClause = projectId ? { userId, metricId, projectId } : { userId, metricId };
-            // Check if the row exists
-            const existing = await prisma.assesment.findFirst({ where: whereClause });
-            if (existing) {
-                const result = await prisma.assesment.updateMany({
-                    where: whereClause,
-                    data: { value: parseInt(value, 10), assesmentDate },
-                });
-                console.log(`Updating metricId ${metricId} with value ${value} for projectId ${projectId}:`, result);
-                return result;
-            } else {
-                // Create new assessment if not exists
-                const result = await prisma.assesment.create({
-                    data: {
-                        userId,
-                        metricId,
-                        projectId,
-                        value: parseInt(value, 10),
-                        assesmentDate,
-                    },
-                });
-                console.log(`Created new assessment for metricId ${metricId} for projectId ${projectId}`);
-                return result;
+        // Use transaction with sequential processing to avoid race conditions
+        await prisma.$transaction(async (tx) => {
+            for (const { metricId, value, assesmentDate } of assessments) {
+                const whereClause = projectId ? { userId, metricId, projectId } : { userId, metricId };
+                
+                // Check if the row exists
+                const existing = await tx.assesment.findFirst({ where: whereClause });
+                
+                if (existing) {
+                    await tx.assesment.update({
+                        where: { id: existing.id },
+                        data: { 
+                            value: parseInt(value, 10), 
+                            assesmentDate,
+                            updated_at: new Date()
+                        },
+                    });
+                    console.log(`Updated metricId ${metricId} with value ${value} for projectId ${projectId}`);
+                } else {
+                    await tx.assesment.create({
+                        data: {
+                            userId,
+                            metricId,
+                            projectId,
+                            value: parseInt(value, 10),
+                            assesmentDate,
+                        },
+                    });
+                    console.log(`Created new assessment for metricId ${metricId} for projectId ${projectId}`);
+                }
             }
         });
-
-        await Promise.all(updatePromises);
 
         res.status(200).json({
             error: false,

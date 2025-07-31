@@ -42,14 +42,16 @@ export default function KpiPage() {
           ))}
         </select>
       </div>
-      <TableKPI 
-        divisionId={selectedDivision}
-        divisionName={
-          selectedDivision
-            ? (divisions.find((d) => d.id === selectedDivision)?.divisionName || "")
-            : ""
-        }
-      />
+      {selectedDivision && (
+        <TableKPI 
+          divisionId={selectedDivision}
+          divisionName={
+            selectedDivision
+              ? (divisions.find((d) => d.id === selectedDivision)?.divisionName || "")
+              : ""
+          }
+        />
+      )}
     </MainLayout>
   );
 }

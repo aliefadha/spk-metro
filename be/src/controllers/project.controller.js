@@ -37,7 +37,7 @@ const projectController = {
                     asessment: true,
                 },
                 orderBy: {
-                    deadline: 'desc'
+                    deadline: 'asc'
                 }
             });
 
@@ -288,7 +288,7 @@ const projectController = {
 
             const projects = await prisma.project.findMany({
                 where: {
-                        status: 'DONE',
+                    status: 'DONE',
                     tanggal_selesai: {
                         gte: startDate,
                         lt: endDate

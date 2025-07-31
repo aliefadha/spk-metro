@@ -151,10 +151,14 @@ const TableKPI = ({ divisionId, divisionName }) => {
 
     if (!target || parseFloat(target) <= 0) {
       newErrors.target = "Target harus berupa angka positif";
+    } else if (parseFloat(target) < 0 || parseFloat(target) > 100) {
+      newErrors.target = "Target harus berada dalam rentang 0-100";
     }
 
     if (!bobot || parseFloat(bobot) <= 0) {
       newErrors.bobot = "Bobot harus berupa angka positif";
+    } else if (parseFloat(bobot) < 0 || parseFloat(bobot) > 5) {
+      newErrors.bobot = "Bobot harus berada dalam rentang 0-5";
     }
 
     if (!char) {
