@@ -45,6 +45,7 @@ async function main() {
   const users = [
     {
       id: '24a916f3-0a96-4bca-9b15-3c991455d0e6',
+      userId: 'USR-0001',
       email: 'mhdulilabshar@example.com',
       password: hashedPassword,
       fullName: 'Mhd Ulil Abshar',
@@ -55,6 +56,7 @@ async function main() {
     },
     {
       id: '447384ec-4fe3-4663-9807-5c02cddf07af',
+      userId: 'USR-0002',
       email: 'aliefadha@example.com',
       password: hashedPassword,
       fullName: 'Alief Adha',
@@ -65,6 +67,7 @@ async function main() {
     },
     {
       id: '48620d76-1a4a-49dc-ad17-50a3a3bf8854',
+      userId: 'USR-0003',
       email: 'nadiniannisabyant@example.com',
       password: hashedPassword,
       fullName: 'Nadini Annisa Byant',
@@ -75,6 +78,7 @@ async function main() {
     },
     {
       id: '52b3927e-6f55-4dac-9ecc-fc47f10170a3',
+      userId: 'USR-0004',
       email: 'iqbaldefriprasetya@example.com',
       password: hashedPassword,
       fullName: 'Iqbal Defri Prasetya',
@@ -85,6 +89,7 @@ async function main() {
     },
     {
       id: '54fb284d-d47e-4dd5-a4e7-dc15b4e7e1c5',
+      userId: 'USR-0005',
       email: 'hagisirajsumanta@example.com',
       password: hashedPassword,
       fullName: 'Hagi Siraj Sumanta',
@@ -95,6 +100,7 @@ async function main() {
     },
     {
       id: '625b80de-1812-40bf-8397-e9d9132ff3eb',
+      userId: 'USR-0006',
       email: 'superadmin@gmail.com',
       password: hashedPassword,
       fullName: 'Super Admin',
@@ -105,6 +111,7 @@ async function main() {
     },
     {
       id: '700d9d1e-e177-433c-898c-4db78fdc12dd',
+      userId: 'USR-0007',
       email: 'daffarizamuliya@example.com',
       password: hashedPassword,
       fullName: 'Daffa Riza Muliya',
@@ -115,6 +122,7 @@ async function main() {
     },
     {
       id: '9637f8d1-8e31-4136-9fa3-7bb6716558b5',
+      userId: 'USR-0008',
       email: 'deliciasyifamaghfira@example.com',
       password: hashedPassword,
       fullName: 'Delicia Syifa Maghfira',
@@ -125,6 +133,7 @@ async function main() {
     },
     {
       id: 'be4e3112-45fa-44ae-8048-aaeb9b8dd706',
+      userId: 'USR-0009',
       email: 'hamzahabdillaharif@example.com',
       password: hashedPassword,
       fullName: 'Hamzah Abdillah Arif',
@@ -135,6 +144,7 @@ async function main() {
     },
     {
       id: 'c1744d47-0ce6-4e45-adf1-ed4b13c6e916',
+      userId: 'USR-0010',
       email: 'fajaralifriyandi@example.com',
       password: hashedPassword,
       fullName: 'Fajar Alif Riyandi',
@@ -145,6 +155,7 @@ async function main() {
     },
     {
       id: 'f7e2f29b-c164-496d-a617-2559b296e1cb',
+      userId: 'USR-0011',
       email: 'muhammadfaizabrar@example.com',
       password: hashedPassword,
       fullName: 'Muhammad Faiz Abrar',
