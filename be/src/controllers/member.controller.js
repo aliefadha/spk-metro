@@ -4,11 +4,26 @@ const { encryptPassword } = require("../utils/bcrypt.js");
 const memberController = {
   // Generate custom userId format: USR-0001, USR-0002, etc.
   generateUserId: async () => {
-    // Get the count of existing users to determine the next sequential number
-    const userCount = await prisma.user.count();
-    const nextNumber = (userCount + 1).toString().padStart(4, '0');
+    // Find the highest existing userId number
+    const lastUser = await prisma.user.findFirst({
+      where: {
+        userId: {
+          startsWith: 'USR-'
+        }
+      },
+      orderBy: {
+        userId: 'desc'
+      }
+    });
 
-    return `USR-${nextNumber}`;
+    let nextNumber = 1;
+    if (lastUser && lastUser.userId) {
+      // Extract number from USR-XXXX format
+      const lastNumber = parseInt(lastUser.userId.split('-')[1]);
+      nextNumber = lastNumber + 1;
+    }
+
+    return `USR-${nextNumber.toString().padStart(4, '0')}`;
   },
 
   // Create a new member
@@ -157,7 +172,26 @@ const memberController = {
         });
       }
 
-      await prisma.user.delete({ where: { id } });
+      // Cascade delete: Remove all related records first
+      await prisma.$transaction(async (tx) => {
+        // Delete user tokens
+        await tx.token.deleteMany({
+          where: { userId: id }
+        });
+
+        // Delete user assessments (non-dev)
+        await tx.assesmentNonDev.deleteMany({
+          where: { userId: id }
+        });
+
+        // Delete project collaborations
+        await tx.projectCollaborator.deleteMany({
+          where: { userId: id }
+        });
+
+        // Finally delete the user
+        await tx.user.delete({ where: { id } });
+      });
 
       res.status(200).json({
         error: false,
