@@ -242,6 +242,8 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
           response = { data: { data: developerData } };
         } else if (targetDivision) {
           // For non-developer divisions, get assessments based on user role and selected division
+          console.log('🔍 Fetching non-dev assessments for division:', targetDivision.divisionName);
+          
           let url;
           if (currentUser.role === 'SUPERADMIN' && !selectedDivision) {
             // SUPERADMIN with no division selected sees all assessments
@@ -256,8 +258,13 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
             url += url.includes('?') ? `&month=${month}` : `?month=${month}`;
           }
           
+          console.log('📡 API URL:', url);
+          
           const allAssessmentsResponse = await api.get(url);
           const allAssessments = allAssessmentsResponse.data.data || [];
+          
+          console.log('📊 Raw backend response:', allAssessments.length, 'records');
+          console.log('📊 Sample data:', allAssessments[0]);
           
           // Filter assessments based on user role
           let filteredAssessments;
@@ -271,19 +278,22 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
             );
           }
 
+          console.log('🔍 User role:', currentUser.role);
+          console.log('👤 Current user ID:', currentUser.id);
+          console.log('🎯 Filtered assessments:', filteredAssessments.length, 'records');
+          console.log('🎯 Sample filtered data:', filteredAssessments[0]);
+          console.log('📈 Available KPIs:', kpiList.length, 'items');
           
           // Convert the backend response format to match expected structure
-
           const convertedData = filteredAssessments.map(user => {
-
-            // Convert metrics object to metrics array format
+            // Backend returns metrics as array with format: {metricId, value}
+            // We need to maintain this format
             const metricsArray = kpiList.map(kpi => {
-              // Find metric value by KPI name in the metrics object
-              const metricValue = user.metrics && user.metrics[kpi.kpiName] ? user.metrics[kpi.kpiName] : 0;
-
+              // Find metric by metricId in the metrics array
+              const userMetric = user.metrics.find(m => m.metricId === kpi.id);
               return {
                 metricId: kpi.id,
-                value: metricValue
+                value: userMetric ? userMetric.value : 0
               };
             });
             
@@ -294,6 +304,10 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
               assesmentDate: user.assesmentDate || user.created_at
             };
           });
+          
+          console.log('✅ Converted data:', convertedData.length, 'records');
+          console.log('✅ Sample converted:', convertedData[0]);
+          
           response = { data: { data: convertedData } };
         } else {
           // No division information available
@@ -319,6 +333,8 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
           };
         });
         
+        console.log('🎉 Final formatted data:', formattedData.length, 'records');
+        console.log('🎉 Sample final data:', formattedData[0]);
 
         setReportData(formattedData);
     } catch (error) {
@@ -333,12 +349,24 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
     } finally {
       setLoading(false);
     }
-  }, [kpiList]);
+  }, [kpiList, selectedDivision]);
 
   useEffect(() => {
-    // Only fetch report data if we have KPIs loaded
+    const currentUser = getUser();
+    
+    // Only fetch report data if we have KPIs loaded AND conditions are met
     if (kpiList.length > 0) {
-      fetchKPIReport(selectedMonth);
+      // For SUPERADMIN: require division selection before fetching data
+      if (currentUser?.role === 'SUPERADMIN') {
+        if (selectedDivision && selectedMonth) {
+          fetchKPIReport(selectedMonth);
+        }
+      } else {
+        // For regular users: fetch data when month is available (division is from user profile)
+        if (selectedMonth) {
+          fetchKPIReport(selectedMonth);
+        }
+      }
     }
   }, [selectedMonth, selectedDivision, kpiList, fetchKPIReport]);
 
@@ -391,6 +419,19 @@ const KPIReportTableIndividual = ({ selectedDivision, selectedMonth }) => {
                 <div className="flex flex-col items-center gap-2">
                   <FileText className="w-12 h-12 text-gray-300" />
                   <p className="text-gray-500">Pilih divisi terlebih dahulu untuk melihat laporan KPI</p>
+                  <p className="text-sm text-gray-400">Setelah memilih divisi, bulan akan otomatis diset ke bulan ini</p>
+                </div>
+              </div>
+            );
+          }
+          
+          // If no month selected yet (waiting for division selection)
+          if (!selectedMonth) {
+            return (
+              <div className="text-center py-8">
+                <div className="flex flex-col items-center gap-2">
+                  <FileText className="w-12 h-12 text-gray-300" />
+                  <p className="text-gray-500">Memuat data...</p>
                 </div>
               </div>
             );

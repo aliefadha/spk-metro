@@ -149,6 +149,14 @@ const divisionController = {
 
       const division = await prisma.division.findUnique({
         where: { id },
+        include: {
+          user: true,
+          _count: {
+            select: {
+              user: true
+            }
+          }
+        }
       });
 
       if (!division) {
@@ -158,13 +166,102 @@ const divisionController = {
         });
       }
 
-      await prisma.division.delete({
-        where: { id },
+      // Menggunakan transaction untuk memastikan cascade delete berjalan dengan aman
+      await prisma.$transaction(async (prisma) => {
+        // 1. Set divisionId users menjadi null (tidak menghapus user)
+        await prisma.user.updateMany({
+          where: { divisionId: id },
+          data: { divisionId: null }
+        });
+
+        // 2. Ambil semua metric yang terkait dengan division
+        const metrics = await prisma.metric.findMany({
+          where: { divisionId: id },
+          select: { id: true }
+        });
+
+        const metricIds = metrics.map(metric => metric.id);
+
+        if (metricIds.length > 0) {
+          // 3. Hapus semua assesmentResult yang terkait dengan assesment/assesmentNonDev dari metrics ini
+          await prisma.assesmentResult.deleteMany({
+            where: {
+              OR: [
+                {
+                  assesment: {
+                    metricId: { in: metricIds }
+                  }
+                },
+                {
+                  assesmentNonDev: {
+                    metricId: { in: metricIds }
+                  }
+                }
+              ]
+            }
+          });
+
+          // 4. Hapus semua metricNormalization yang terkait dengan assesment/assesmentNonDev dari metrics ini
+          await prisma.metricNormalization.deleteMany({
+            where: {
+              OR: [
+                {
+                  assesment: {
+                    metricId: { in: metricIds }
+                  }
+                },
+                {
+                  assesmentNonDev: {
+                    metricId: { in: metricIds }
+                  }
+                }
+              ]
+            }
+          });
+
+          // 5. Hapus semua metricResult yang terkait dengan assesment/assesmentNonDev dari metrics ini
+          await prisma.metricResult.deleteMany({
+            where: {
+              OR: [
+                {
+                  assesment: {
+                    metricId: { in: metricIds }
+                  }
+                },
+                {
+                  assesmentNonDev: {
+                    metricId: { in: metricIds }
+                  }
+                }
+              ]
+            }
+          });
+
+          // 6. Hapus semua assesment yang terkait dengan metrics ini
+          await prisma.assesment.deleteMany({
+            where: { metricId: { in: metricIds } }
+          });
+
+          // 7. Hapus semua assesmentNonDev yang terkait dengan metrics ini
+          await prisma.assesmentNonDev.deleteMany({
+            where: { metricId: { in: metricIds } }
+          });
+
+          // 8. Hapus semua metric yang terkait dengan division
+          await prisma.metric.deleteMany({
+            where: { divisionId: id }
+          });
+        }
+
+        // 9. Hapus division
+        await prisma.division.delete({
+          where: { id },
+        });
       });
 
       res.status(200).json({
         error: false,
-        message: 'Division deleted successfully',
+        message: `Division deleted successfully. ${division._count.user} users have been moved to no division.`,
       });
     } catch (err) {
       res.status(500).json({

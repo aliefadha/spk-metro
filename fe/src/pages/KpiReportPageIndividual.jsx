@@ -8,6 +8,14 @@ export default function KpiReportPageIndividual() {
   const [divisions, setDivisions] = useState([]);
   const [selectedDivision, setSelectedDivision] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("");
+  
+  // Function to get current month
+  const getCurrentMonth = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    return `${year}-${month}`;
+  };
 
   useEffect(() => {
     const fetchDivisions = async () => {
@@ -23,6 +31,13 @@ export default function KpiReportPageIndividual() {
     };
     fetchDivisions();
   }, []);
+
+  // Set default month when division is selected
+  useEffect(() => {
+    if (selectedDivision && !selectedMonth) {
+      setSelectedMonth(getCurrentMonth());
+    }
+  }, [selectedDivision, selectedMonth]);
 
 
   return (

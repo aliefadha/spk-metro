@@ -155,7 +155,7 @@ const userController = {
                 },
             });
 
-            console.log(user)
+            console.log(users)
             res.status(200).json({
                 error: false,
                 message: 'Users retrieved successfully',
@@ -186,13 +186,59 @@ const userController = {
                 });
             }
 
-            await prisma.user.delete({
-                where: { id },
+            // Begin transaction for delete cascade
+            await prisma.$transaction(async (tx) => {
+                // Delete all related metricResult from assesmentNonDev
+                await tx.metricResult.deleteMany({
+                    where: {
+                        assesmentNonDev: {
+                            userId: id
+                        }
+                    }
+                });
+
+                // Delete all related metricNormalization from assesmentNonDev
+                await tx.metricNormalization.deleteMany({
+                    where: {
+                        assesmentNonDev: {
+                            userId: id
+                        }
+                    }
+                });
+
+                // Delete all related assesmentResult from assesmentNonDev
+                await tx.assesmentResult.deleteMany({
+                    where: {
+                        assesmentNonDev: {
+                            userId: id
+                        }
+                    }
+                });
+
+                // Delete all assesmentNonDev records for this user
+                await tx.assesmentNonDev.deleteMany({
+                    where: { userId: id }
+                });
+
+                // Delete all projectCollaborator records for this user
+                await tx.projectCollaborator.deleteMany({
+                    where: { userId: id }
+                });
+
+                // Delete all tokens for this user
+                await tx.token.deleteMany({
+                    where: { userId: id }
+                });
+
+                // Finally, delete the user
+                await tx.user.delete({
+                    where: { id }
+                });
             });
 
             res.status(200).json({
                 error: false,
-                message: 'User deleted successfully',
+                message: 'User and all related data deleted successfully',
                 data: null,
             });
         } catch (err) {
@@ -220,7 +266,6 @@ const userController = {
                 });
             }
 
-            // Set divisionId menjadi null
             const updatedUser = await prisma.user.update({
                 where: { id },
                 data: { divisionId: null },
