@@ -54,6 +54,7 @@ const SPKTable = () => {
       
       // Get assessments for all done projects
       const allAssessments = [];
+      
       for (const project of doneProjects) {
         try {
           const assessmentResponse = await api.get(`http://localhost:3000/api/v1/assessments/project/${project.id}`);
@@ -121,7 +122,7 @@ const SPKTable = () => {
           if (metricData && metricData.totalWeight > 0) {
             // Calculate weighted average: sum(skorAkhir * bobot) / sum(bobot)
             const weightedAverage = metricData.totalWeightedScore / metricData.totalWeight;
-            const roundedValue = Math.round(weightedAverage * 1000) / 1000;
+            const roundedValue = Math.round(weightedAverage * 10) / 10;
             
             return {
               metricId: kpi.id,
@@ -148,6 +149,7 @@ const SPKTable = () => {
           metrics: metrics
         };
       });
+      
       setReportData(formattedData);
       
       /*
@@ -198,6 +200,7 @@ const SPKTable = () => {
           }
           
           const roundedValue = Math.round(normalizedValue * 1000) / 1000;
+          
           return roundedValue; // Round to 3 decimal places
         });
         
@@ -384,7 +387,7 @@ const SPKTable = () => {
                       className="px-4 py-3"
                       style={{ textAlign: "center" }}
                     >
-                      {typeof value === 'number' ? value.toFixed(3) : value}
+                      {typeof value === 'number' ? value.toFixed(1) : value}
                     </td>
                   ))}
                 </tr>

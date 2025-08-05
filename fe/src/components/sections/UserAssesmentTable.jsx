@@ -6,7 +6,7 @@ import Swal from "sweetalert2";
 
 const UserAssesmentTable = () => {
   const [assessments, setAssessments] = useState([]);
-  const [managedProjects, setManagedProjects] = useState([]);
+  const [userProjects, setUserProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState("");
   const [kpiList, setKpiList] = useState([]);
   const [isEditing, setIsEditing] = useState(null);
@@ -45,8 +45,8 @@ const UserAssesmentTable = () => {
     fetchKPI();
   }, []);
 
-  // Fetch projects where logged user is project manager
-  const fetchManagedProjects = async () => {
+  // Fetch all projects where user is involved (PM or member)
+  const fetchUserProjects = async () => {
     try {
       const currentUser = getUser();
       if (!currentUser) {
@@ -54,24 +54,39 @@ const UserAssesmentTable = () => {
         return;
       }
 
-      // Get all projects and their collaborators
-      const projectsResponse = await api.get("http://localhost:3000/api/v1/projects");
-      const allProjects = projectsResponse.data.data || [];
-      
-      // Find projects where current user is project manager
-      const userManagedProjects = allProjects.filter(project => {
-        // Check if current user is PM for this project using the included projectCollaborator data
-        if (project.projectCollaborator && project.projectCollaborator.length > 0) {
-          return project.projectCollaborator.some(collab => 
-            collab.userId === currentUser.id && collab.isProjectManager === true
-          );
-        }
-        return false;
-      });
+      // Use the new endpoint to get all projects where user is involved
+      const projectsResponse = await api.get(`http://localhost:3000/api/v1/projects/user/${currentUser.id}`);
+      const allUserProjects = projectsResponse.data.data || [];
 
-      setManagedProjects(userManagedProjects);
+      setUserProjects(allUserProjects);
     } catch (error) {
-      console.error("Error fetching managed projects:", error);
+      console.error("Error fetching user projects:", error);
+      // Fallback to fetch all projects if the new endpoint fails
+      try {
+        const currentUser = getUser();
+        if (!currentUser) {
+          console.error("No user found in fallback");
+          return;
+        }
+        
+        const projectsResponse = await api.get("http://localhost:3000/api/v1/projects");
+        const allProjects = projectsResponse.data.data || [];
+        
+        // Find projects where current user is involved
+        const allUserProjects = allProjects.filter(project => {
+          // Check if current user is involved in this project
+          if (project.projectCollaborator && project.projectCollaborator.length > 0) {
+            return project.projectCollaborator.some(collab => 
+              collab.userId === currentUser.id
+            );
+          }
+          return false;
+        });
+
+        setUserProjects(allUserProjects);
+      } catch (fallbackError) {
+        console.error("Error fetching user projects fallback:", fallbackError);
+      }
     }
   };
 
@@ -95,16 +110,37 @@ const UserAssesmentTable = () => {
       }
 
       try {
+        let allMembers = [];
         let allAssessments = [];
 
         if (projectId) {
+          // Get the specific project to find all members
+          const project = userProjects.find(p => p.id === projectId);
+          if (project && project.projectCollaborator) {
+            // Get all members from the project
+            allMembers = project.projectCollaborator.map(collab => ({
+              userId: collab.userId,
+              fullName: collab.user.fullName,
+              isProjectManager: collab.isProjectManager
+            }));
+          }
+
           // Fetch assessments for specific project
           const assessmentResponse = await api.get(`http://localhost:3000/api/v1/assessments/project/${projectId}`);
           const projectAssessments = assessmentResponse.data.data || [];
           allAssessments = projectAssessments;
         } else {
-          // Fetch assessments for all managed projects
-          for (const project of managedProjects) {
+          // For all projects, get all members and assessments
+          for (const project of userProjects) {
+            if (project.projectCollaborator) {
+              const projectMembers = project.projectCollaborator.map(collab => ({
+                userId: collab.userId,
+                fullName: collab.user.fullName,
+                isProjectManager: collab.isProjectManager
+              }));
+              allMembers.push(...projectMembers);
+            }
+
             try {
               const assessmentResponse = await api.get(`http://localhost:3000/api/v1/assessments/project/${project.id}`);
               const projectAssessments = assessmentResponse.data.data || [];
@@ -115,9 +151,9 @@ const UserAssesmentTable = () => {
           }
         }
 
-        // If no assessments found, show all assessments as fallback
-        if (allAssessments.length === 0 && managedProjects.length === 0) {
-          console.log("No managed projects found, showing all assessments");
+        // If no projects found, show all assessments as fallback
+        if (allMembers.length === 0 && userProjects.length === 0) {
+          console.log("No projects found, showing all assessments");
           const response = await api.get("http://localhost:3000/api/v1/assessments");
           const formattedData = response.data.data.map((item) => ({
             userId: item.userId,
@@ -131,17 +167,38 @@ const UserAssesmentTable = () => {
           return;
         }
 
-        // Format the data
-        const formattedData = allAssessments.map((item) => ({
-          userId: item.userId,
-          fullName: item.fullName,
-          metrics: item.metrics.reduce((acc, metric) => {
-            acc[metric.metricId] = metric.value;
-            return acc;
-          }, {}),
+        // Remove duplicate members (in case user is in multiple projects)
+        const uniqueMembers = allMembers.filter((member, index, self) => 
+          index === self.findIndex(m => m.userId === member.userId)
+        );
+
+        // Filter out project managers, keep only regular members
+        const regularMembers = uniqueMembers.filter(member => !member.isProjectManager);
+
+        // Create a map of assessment data by userId
+        const assessmentMap = {};
+        allAssessments.forEach((item) => {
+          if (!assessmentMap[item.userId]) {
+            assessmentMap[item.userId] = {
+              userId: item.userId,
+              fullName: item.fullName,
+              metrics: {}
+            };
+          }
+          item.metrics.forEach((metric) => {
+            assessmentMap[item.userId].metrics[metric.metricId] = metric.value;
+          });
+        });
+
+        // Merge members with their assessment data
+        const formattedData = regularMembers.map((member) => ({
+          userId: member.userId,
+          fullName: member.fullName,
+          isProjectManager: member.isProjectManager,
+          metrics: assessmentMap[member.userId]?.metrics || {}
         }));
 
-        console.log("Formatted Data:", formattedData);
+        console.log("Formatted Data with all members:", formattedData);
         setAssessments(formattedData);
       } catch (projectError) {
         console.error("Error fetching project data, falling back to all assessments:", projectError);
@@ -170,14 +227,14 @@ const UserAssesmentTable = () => {
   };
 
   useEffect(() => {
-    fetchManagedProjects();
+    fetchUserProjects();
   }, []);
 
   useEffect(() => {
-    if (managedProjects.length > 0) {
+    if (userProjects.length > 0) {
       fetchData();
     }
-  }, [managedProjects]);
+  }, [userProjects]);
 
   // Fungsi untuk masuk ke mode edit
   const handleEdit = (userId, metrics) => {
@@ -233,6 +290,19 @@ const UserAssesmentTable = () => {
     setEditValues({});
   };
 
+  // Helper function to check if user is project manager for a specific project
+  const isUserProjectManager = (projectId) => {
+    const currentUser = getUser();
+    if (!currentUser) return false;
+    
+    const project = userProjects.find(p => p.id === projectId);
+    if (!project || !project.projectCollaborator) return false;
+    
+    return project.projectCollaborator.some(collab => 
+      collab.userId === currentUser.id && collab.isProjectManager === true
+    );
+  };
+
   return (
     <div className="bg-white rounded-lg p-6 mt-8">
       <div className="flex flex-col sm:flex-row gap-2 mb-6 ">
@@ -246,7 +316,7 @@ const UserAssesmentTable = () => {
           }}
         >
           <option value="">Semua Project</option>
-          {managedProjects.map((project) => (
+          {userProjects.map((project) => (
             <option key={project.id} value={project.id}>
               {project.projectName}
             </option>
@@ -313,13 +383,16 @@ const UserAssesmentTable = () => {
                         </button>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => handleEdit(item.userId, item.metrics)}
-                        className="text-blue-600 hover:text-blue-800"
-                        title="Edit"
-                      >
-                        <Edit size={16} />
-                      </button>
+                      // Only show edit button if user is project manager for this project
+                      isUserProjectManager(selectedProject) && (
+                        <button
+                          onClick={() => handleEdit(item.userId, item.metrics)}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="Edit"
+                        >
+                          <Edit size={16} />
+                        </button>
+                      )
                     )}
                   </td>
                 </tr>
@@ -330,6 +403,8 @@ const UserAssesmentTable = () => {
       ) : (
         <div className="text-center py-8 text-gray-500">
           <p>Pilih project untuk melihat data assessment</p>
+          <p className="text-sm mt-2">Menampilkan semua member project (dengan atau tanpa assessment)</p>
+          <p className="text-sm mt-1">Edit hanya tersedia untuk project manager</p>
         </div>
       )}
     </div>

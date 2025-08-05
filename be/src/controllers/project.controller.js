@@ -358,6 +358,101 @@ const projectController = {
         }
     },
 
+    // Get projects by project manager
+    getProjectsByManager: async (req, res) => {
+        try {
+            const { userId } = req.params;
+
+            if (!userId) {
+                return res.status(400).json({
+                    error: true,
+                    message: 'User ID is required',
+                });
+            }
+
+            const projects = await prisma.project.findMany({
+                where: {
+                    projectCollaborator: {
+                        some: {
+                            userId: userId,
+                            isProjectManager: true
+                        }
+                    }
+                },
+                include: {
+                    projectCollaborator: {
+                        include: {
+                            user: true,
+                        }
+                    },
+                    asessment: true,
+                },
+                orderBy: {
+                    deadline: 'asc'
+                }
+            });
+
+            res.status(200).json({
+                error: false,
+                message: 'Projects by manager retrieved successfully',
+                data: projects,
+            });
+        } catch (err) {
+            res.status(500).json({
+                error: true,
+                message: 'Error retrieving projects by manager',
+                errorDetail: err.message,
+            });
+        }
+    },
+
+    // Get all projects where user is involved (PM or member)
+    getProjectsByUser: async (req, res) => {
+        try {
+            const { userId } = req.params;
+
+            if (!userId) {
+                return res.status(400).json({
+                    error: true,
+                    message: 'User ID is required',
+                });
+            }
+
+            const projects = await prisma.project.findMany({
+                where: {
+                    projectCollaborator: {
+                        some: {
+                            userId: userId
+                        }
+                    }
+                },
+                include: {
+                    projectCollaborator: {
+                        include: {
+                            user: true,
+                        }
+                    },
+                    asessment: true,
+                },
+                orderBy: {
+                    deadline: 'asc'
+                }
+            });
+
+            res.status(200).json({
+                error: false,
+                message: 'Projects by user retrieved successfully',
+                data: projects,
+            });
+        } catch (err) {
+            res.status(500).json({
+                error: true,
+                message: 'Error retrieving projects by user',
+                errorDetail: err.message,
+            });
+        }
+    },
+
 
 
 };
