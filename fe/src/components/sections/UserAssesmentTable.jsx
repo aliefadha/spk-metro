@@ -3,8 +3,10 @@ import { Edit, Check, X } from "lucide-react";
 import api from "@/utils/axios";
 import { getUser } from "@/utils/auth";
 import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
 
 const UserAssesmentTable = () => {
+  const navigate = useNavigate();
   const [assessments, setAssessments] = useState([]);
   const [userProjects, setUserProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState("");
@@ -45,7 +47,7 @@ const UserAssesmentTable = () => {
     fetchKPI();
   }, []);
 
-  // Fetch all projects where user is involved (PM or member)
+  // Fetch only projects where user is project manager
   const fetchUserProjects = async () => {
     try {
       const currentUser = getUser();
@@ -58,37 +60,58 @@ const UserAssesmentTable = () => {
       const projectsResponse = await api.get(`http://localhost:3000/api/v1/projects/user/${currentUser.id}`);
       const allUserProjects = projectsResponse.data.data || [];
 
-      setUserProjects(allUserProjects);
-    } catch (error) {
-      console.error("Error fetching user projects:", error);
-      // Fallback to fetch all projects if the new endpoint fails
-      try {
-        const currentUser = getUser();
-        if (!currentUser) {
-          console.error("No user found in fallback");
-          return;
+      // Filter to only show projects where user is project manager
+      const pmProjects = allUserProjects.filter(project => {
+        if (project.projectCollaborator && project.projectCollaborator.length > 0) {
+          return project.projectCollaborator.some(collab => 
+            collab.userId === currentUser.id && collab.isProjectManager === true
+          );
         }
-        
-        const projectsResponse = await api.get("http://localhost:3000/api/v1/projects");
-        const allProjects = projectsResponse.data.data || [];
-        
-        // Find projects where current user is involved
-        const allUserProjects = allProjects.filter(project => {
-          // Check if current user is involved in this project
-          if (project.projectCollaborator && project.projectCollaborator.length > 0) {
-            return project.projectCollaborator.some(collab => 
-              collab.userId === currentUser.id
-            );
-          }
-          return false;
-        });
+        return false;
+      });
 
-        setUserProjects(allUserProjects);
-      } catch (fallbackError) {
-        console.error("Error fetching user projects fallback:", fallbackError);
+              setUserProjects(pmProjects);
+        
+        // If no PM projects found, redirect to userkpiproject
+        if (pmProjects.length === 0) {
+          navigate('/userkpiproject');
+        }
+      } catch (error) {
+        console.error("Error fetching user projects:", error);
+        // Fallback to fetch all projects if the new endpoint fails
+        try {
+          const currentUser = getUser();
+          if (!currentUser) {
+            console.error("No user found in fallback");
+            return;
+          }
+          
+          const projectsResponse = await api.get("http://localhost:3000/api/v1/projects");
+          const allProjects = projectsResponse.data.data || [];
+          
+          // Find projects where current user is project manager
+          const pmProjects = allProjects.filter(project => {
+            if (project.projectCollaborator && project.projectCollaborator.length > 0) {
+              return project.projectCollaborator.some(collab => 
+                collab.userId === currentUser.id && collab.isProjectManager === true
+              );
+            }
+            return false;
+          });
+
+          setUserProjects(pmProjects);
+          
+          // If no PM projects found in fallback, redirect to userkpiproject
+          if (pmProjects.length === 0) {
+            navigate('/userkpiproject');
+          }
+        } catch (fallbackError) {
+          console.error("Error fetching user projects fallback:", fallbackError);
+          // If both main and fallback fail, redirect to userkpiproject
+          navigate('/userkpiproject');
+        }
       }
-    }
-  };
+    };
 
   const fetchData = async (projectId = null) => {
     try {
@@ -290,18 +313,7 @@ const UserAssesmentTable = () => {
     setEditValues({});
   };
 
-  // Helper function to check if user is project manager for a specific project
-  const isUserProjectManager = (projectId) => {
-    const currentUser = getUser();
-    if (!currentUser) return false;
-    
-    const project = userProjects.find(p => p.id === projectId);
-    if (!project || !project.projectCollaborator) return false;
-    
-    return project.projectCollaborator.some(collab => 
-      collab.userId === currentUser.id && collab.isProjectManager === true
-    );
-  };
+
 
   return (
     <div className="bg-white rounded-lg p-6 mt-8">
@@ -383,16 +395,14 @@ const UserAssesmentTable = () => {
                         </button>
                       </div>
                     ) : (
-                      // Only show edit button if user is project manager for this project
-                      isUserProjectManager(selectedProject) && (
-                        <button
-                          onClick={() => handleEdit(item.userId, item.metrics)}
-                          className="text-blue-600 hover:text-blue-800"
-                          title="Edit"
-                        >
-                          <Edit size={16} />
-                        </button>
-                      )
+                      // Since we only show projects where user is PM, always show edit button
+                      <button
+                        onClick={() => handleEdit(item.userId, item.metrics)}
+                        className="text-blue-600 hover:text-blue-800"
+                        title="Edit"
+                      >
+                        <Edit size={16} />
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -404,7 +414,7 @@ const UserAssesmentTable = () => {
         <div className="text-center py-8 text-gray-500">
           <p>Pilih project untuk melihat data assessment</p>
           <p className="text-sm mt-2">Menampilkan semua member project (dengan atau tanpa assessment)</p>
-          <p className="text-sm mt-1">Edit hanya tersedia untuk project manager</p>
+          <p className="text-sm mt-1">Hanya project yang Anda kelola sebagai Project Manager</p>
         </div>
       )}
     </div>

@@ -1,7 +1,16 @@
-import React from "react";
+import { useState, useEffect } from "react";
 import { Menu } from "lucide-react";
+import { getUser } from "@/utils/auth";
 
 const Navbar = ({ onMenuClick }) => {
+  const [userName, setUserName] = useState("User / Member");
+
+  useEffect(() => {
+    const currentUser = getUser();
+    if (currentUser && currentUser.fullName) {
+      setUserName(currentUser.fullName);
+    }
+  }, []);
   return (
     <header className="sticky top-0 z-10 h-16 border-b bg-white px-4 lg:px-6 flex items-center justify-between">
       <div className="flex items-center space-x-3">
@@ -16,7 +25,7 @@ const Navbar = ({ onMenuClick }) => {
       <div className="flex items-center space-x-4">
         <div className="flex items-center space-x-2">
           <span className="text-sm font-medium hidden sm:inline">
-            User / Member
+            {userName}
           </span>
         </div>
       </div>

@@ -1,9 +1,45 @@
-import React from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { sidebarLinksUser } from "@/data/data";
 import NavLink from "./NavLink";
+import api from "@/utils/axios";
+import { getUser } from "@/utils/auth";
 
 const Sidebar = ({ isOpen, onClose }) => {
+  const [hasProjects, setHasProjects] = useState(false);
+
+  useEffect(() => {
+    const checkUserProjects = async () => {
+      try {
+        const currentUser = getUser();
+        if (!currentUser) {
+          setHasProjects(false);
+          return;
+        }
+
+        // Fetch user projects to check if user has any PM projects
+        const projectsResponse = await api.get(`http://localhost:3000/api/v1/projects/user/${currentUser.id}`);
+        const allUserProjects = projectsResponse.data.data || [];
+
+        // Filter to only show projects where user is project manager
+        const pmProjects = allUserProjects.filter(project => {
+          if (project.projectCollaborator && project.projectCollaborator.length > 0) {
+            return project.projectCollaborator.some(collab => 
+              collab.userId === currentUser.id && collab.isProjectManager === true
+            );
+          }
+          return false;
+        });
+
+        setHasProjects(pmProjects.length > 0);
+      } catch (error) {
+        console.error("Error checking user projects:", error);
+        setHasProjects(false);
+      }
+    };
+
+    checkUserProjects();
+  }, []);
   return (
     <>
       {isOpen && (
@@ -34,17 +70,24 @@ const Sidebar = ({ isOpen, onClose }) => {
         </div>
 
         <nav className="px-3 py-4 space-y-1 overflow-hidden overflow-y-auto flex-1">
-          {sidebarLinksUser.map((link, index) => (
-            <NavLink
-              key={index}
-              {...link}
-              onClick={() => {
-                if (window.innerWidth < 1024) {
-                  onClose();
-                }
-              }}
-            />
-          ))}
+          {sidebarLinksUser.map((link, index) => {
+            // Hide assessment link if user has no projects and link requires projects
+            if (link.showWhenProjects && !hasProjects) {
+              return null;
+            }
+            
+            return (
+              <NavLink
+                key={index}
+                {...link}
+                onClick={() => {
+                  if (window.innerWidth < 1024) {
+                    onClose();
+                  }
+                }}
+              />
+            );
+          })}
         </nav>
       </aside>
     </>

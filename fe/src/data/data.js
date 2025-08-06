@@ -36,8 +36,7 @@ export const sidebarLinks = [
 ];
 
 export const sidebarLinksUser = [
-  
-  { icon: FileText, label: 'Assesment', path: '/userassesment' },
+  { icon: FileText, label: 'Assesment', path: '/userassesment', showWhenProjects: true },
   {
     icon: Calculator,
     label: 'KPI Reports',
